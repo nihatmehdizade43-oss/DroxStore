@@ -27,7 +27,7 @@ const storage = new CloudinaryStorage({
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
   }
 });
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB per file
 });
@@ -35,16 +35,22 @@ const upload = multer({
 // ─── FIREBASE INIT ──────────────────────────────────────────────
 let db = null;
 try {
-  // Sistem data/ dizininde serviceAccountKey.json arayacak!
-  const serviceAccount = require('./data/serviceAccountKey.json');
+  let serviceAccount;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    // Render.com üzerinden gelecek olan JSON metnini obje yapıyoruz
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    // Sadece sizin bilgisayarınızda çalışırken dosyayı okuyacak
+    serviceAccount = require('./data/serviceAccountKey.json');
+  }
+
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
   db = admin.firestore();
   console.log('🔥 Firebase (Firestore) başarıyla bağlandı!');
 } catch (error) {
-  console.warn('⚠️ DİKKAT: Firebase Service Account dosyası (data/serviceAccountKey.json) bulunamadı veya hatalı!');
-  console.warn('⚠️ Lütfen Firebase konsolundan bu dosyayı indirip belirtilen yola koyun.');
+  console.warn('⚠️ DİKKAT: Firebase Service Account bulunamadı!');
 }
 
 // ─── APP SETUP ──────────────────────────────────────────────────
@@ -85,7 +91,7 @@ function authenticateToken(req, res, next) {
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
-  
+
   if (username === ADMIN_USER && password === ADMIN_PASS) {
     // Şifre doğru ise JWT Token oluştur (24 saat geçerli)
     const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
@@ -131,7 +137,7 @@ app.post('/api/categories', [checkDb, authenticateToken], async (req, res) => {
     const newCatRef = db.collection('categories').doc();
     const catData = { name: name.trim(), slug };
     await newCatRef.set(catData);
-    
+
     res.status(201).json({ id: newCatRef.id, ...catData });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -174,7 +180,7 @@ app.post('/api/products', [checkDb, authenticateToken, upload.array('images', 5)
     if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'Görsel yüklenemedi' });
 
     // Cloudinary'ye yüklenen dosyaların URL'lerini alıyoruz
-    const imagePaths = req.files.map(f => f.path); 
+    const imagePaths = req.files.map(f => f.path);
 
     const productData = {
       name: name.trim(),
@@ -208,7 +214,7 @@ app.delete('/api/products/:id', [checkDb, authenticateToken], async (req, res) =
 
     // Firebase'den sil
     await docRef.delete();
-    
+
     // Opsiyonel: Cloudinary'den silme işlemi yapılabilir ama şu anlık atlıyoruz
     res.json({ success: true, message: 'Ürün silindi' });
   } catch (err) {
@@ -245,12 +251,12 @@ app.post('/api/orders', checkDb, async (req, res) => {
       if (prodDoc.exists) {
         let currentStock = prodDoc.data().stock || {};
         if (item.size && currentStock[item.size] !== undefined) {
-           currentStock[item.size] = Math.max(0, currentStock[item.size] - item.qty);
-           batch.update(prodRef, { stock: currentStock });
+          currentStock[item.size] = Math.max(0, currentStock[item.size] - item.qty);
+          batch.update(prodRef, { stock: currentStock });
         }
       }
     }
-    
+
     // Siparişi kaydet
     const orderRef = db.collection('orders').doc();
     const orderData = {
@@ -265,7 +271,7 @@ app.post('/api/orders', checkDb, async (req, res) => {
     batch.set(orderRef, orderData);
 
     await batch.commit(); // Transaction mantığı
-    
+
     res.status(201).json({ success: true, orderId: orderRef.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -286,11 +292,11 @@ app.get('/api/stats', [checkDb, authenticateToken], async (req, res) => {
   try {
     const productsSnap = await db.collection('products').get();
     const ordersSnap = await db.collection('orders').get();
-    
+
     let totalStock = 0;
     productsSnap.docs.forEach(doc => {
-       const stock = doc.data().stock;
-       if(stock) { Object.values(stock).forEach(v => totalStock += Number(v)); }
+      const stock = doc.data().stock;
+      if (stock) { Object.values(stock).forEach(v => totalStock += Number(v)); }
     });
 
     res.json({

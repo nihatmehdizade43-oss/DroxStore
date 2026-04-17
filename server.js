@@ -50,7 +50,8 @@ try {
   db = admin.firestore();
   console.log('🔥 Firebase (Firestore) başarıyla bağlandı!');
 } catch (error) {
-  console.warn('⚠️ DİKKAT: Firebase Service Account bulunamadı!');
+  console.warn('⚠️ DİKKAT: Firebase bağlantı hatası oluştu!');
+  console.error(error);
 }
 
 // ─── APP SETUP ──────────────────────────────────────────────────

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DROXSTORE — Premium Apparel</title>
+<meta name="description" content="DroxStore - Premium kalite giyim mağazası. T-Shirt, Hoodie, Sweatshirt ve daha fazlası.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Admin Pro Styles (Inline for priority) */
+.admin-side-nav { display: flex; gap: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; padding-bottom: 12px; }
+.admin-tab { cursor: pointer; opacity: 0.6; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 14px; transition: 0.3s; }
+.admin-tab.active { opacity: 1; color: var(--accent); }
+.admin-tab-content { display: none; }
+.admin-tab-content.active { display: block; }
+
+.multi-img-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; }
+.preview-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+.preview-item img { width: 100%; height: 100%; object-fit: cover; }
+.remove-preview { position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: white; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; }
+
+/* Admin Extra fields */
+.stock-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 5px; }
+.stock-item { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 6px; }
+.stock-item input { width: 50px; padding: 4px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white; }
+.order-list { display: flex; flex-direction: column; gap: 12px; }
+.order-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+.order-header { display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--accent); font-weight: bold; }
+.order-items { margin-top: 10px; font-size: 13px; color: #ccc; }
+
+/* Checkout Modal */
+.checkout-fields { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+.checkout-fields input, .checkout-fields textarea { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: white; border-radius: 8px; font-family: inherit; }
+
+
+.cat-manage-list { display: flex; flex-direction: column; gap: 10px; }
+.cat-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 12px 20px; border-radius: 12px; }
+.cat-item button { background: none; border: 1px solid rgba(255,0,0,0.3); color: #ff4d4d; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+
+.modal-gallery { display: flex; flex-direction: column; gap: 12px; }
+.modal-main-img { width: 100%; aspect-ratio: 1; border-radius: 20px; overflow: hidden; background: #111; }
+.modal-main-img img { width: 100%; height: 100%; object-fit: cover; }
+.modal-thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+.modal-thumb { width: 60px; height: 60px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; flex-shrink: 0; overflow: hidden; opacity: 0.6; }
+.modal-thumb.active { border-color: var(--accent); opacity: 1; }
+.modal-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-follower" id="cursorFollower"></div>
+
+<!-- LOADER -->
+<div class="loader" id="loader">
+  <div class="loader-inner">
+    <span class="loader-text">DROX</span>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="nav-left">
+    <a href="#products" class="nav-link">Koleksiyon</a>
+    <a href="#products" class="nav-link">Top Drops</a>
+  </div>
+  <a href="/" class="logo">DROX<span>STORE</span></a>
+  <div class="nav-right">
+    <a href="#" class="nav-link admin-btn-nav" onclick="event.preventDefault(); openAdminLogin()">Admin Panel</a>
+    <a href="#" class="nav-link" onclick="event.preventDefault(); openLookbook()">Lookbook</a>
+    <button class="cart-btn" id="cartBtn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"><div class="hero-grid"></div><div class="noise"></div></div>
+  <div class="hero-content">
+    <div class="hero-tag">PREMIUM APPAREL v2.0</div>
+    <h1 class="hero-title">
+      <span class="line" data-text="ELEVATE">ELEVATE</span>
+      <span class="line accent" data-text="EVERY">EVERY</span>
+      <span class="line" data-text="DETAIL">DETAIL</span>
+    </h1>
+    <p class="hero-sub">DroxStore Pro ile sınırları zorlayın. En detaylı koleksiyon, en saf kalite.</p>
+    <div class="hero-actions">
+      <a href="#products" class="btn-primary">Koleksiyonu Keşfet</a>
+      <a href="#" class="btn-ghost" onclick="event.preventDefault(); openLookbook()">2026 Lookbook →</a>
+    </div>
+  </div>
+  <div class="hero-scroll"><span>SCROLL</span><div class="scroll-line"></div></div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span>MULTI-IMAGE SUPPORT</span><span class="dot">✦</span>
+    <span>DYNAMIC CATEGORIES</span><span class="dot">✦</span>
+    <span>DROX PRO V2.0</span><span class="dot">✦</span>
+    <span>PREMIUM QUALITY</span><span class="dot">✦</span>
+    <span>FREE SHIPPING OVER ₺500</span><span class="dot">✦</span>
+  </div>
+</div>
+
+<!-- CATEGORIES SECT -->
+<section class="categories" id="catSection">
+  <div class="section-header">
+    <span class="section-tag">KEŞFET</span>
+    <h2>Koleksiyonlar</h2>
+  </div>
+  <div class="cat-grid" id="catGridArea">
+    <!-- Categories injected by JS -->
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section class="products" id="products">
+  <div class="section-header">
+    <span class="section-tag">ÜRÜNLER</span>
+    <h2>Tüm Parçalar</h2>
+  </div>
+  <div class="filter-bar" id="productFilters">
+    <button class="filter-btn active" data-cat="all">Tümü</button>
+    <!-- Dynamic filters injected here -->
+  </div>
+  <div class="product-grid" id="productGrid"></div>
+  <div class="empty-store" id="emptyStore" style="display:none;">
+    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8">
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+    </svg>
+    <h3>Mağaza Şu An Boş</h3>
+    <p>Admin panelinden ürün ekleyerek başlayın.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-bottom">
+    <span>© 2025 DroxStore v2.0. Tüm hakları saklıdır.</span>
+    <div class="payment-icons">
+      <span class="pay-icon">VISA</span><span class="pay-icon">MC</span><span class="pay-icon">İYZİCO</span>
+    </div>
+  </div>
+</footer>
+
+<!-- MODALS & DRAWERS -->
+<div class="cart-overlay" id="cartOverlay"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-header"><h3>Sepetim (<span id="cartItemCount">0</span>)</h3><button class="cart-close" id="cartClose">✕</button></div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total"><span>Toplam</span><span id="cartTotal">₺0</span></div>
+    <button class="btn-primary full" onclick="openCheckout()">Ödemeye Geç</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="product-modal" id="productModal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkoutOverlay">
+  <div class="product-modal" style="max-width: 500px;">
+    <button class="modal-close" onclick="closeCheckout()">✕</button>
+    <div class="modal-body">
+      <h2>Siparişi Tamamla</h2>
+      <form id="checkoutForm" class="checkout-fields" onsubmit="submitCheckout(event)">
+        <input type="text" id="chkName" placeholder="Ad Soyad" required>
+        <input type="tel" id="chkPhone" placeholder="Telefon Numarası" required>
+        <textarea id="chkAddress" placeholder="Açık Adresiniz" rows="3" required></textarea>
+        <button type="submit" class="btn-primary full" style="margin-top: 10px;">Siparişi Onayla</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- LOOKBOOK MODAL -->
+<div class="modal-overlay" id="lookbookOverlay">
+  <div class="product-modal" style="max-width: 900px; height: 80vh; overflow-y: auto;">
+    <button class="modal-close" onclick="closeLookbook()">✕</button>
+    <div class="modal-body">
+      <h2 style="font-family: Bebas Neue; font-size:40px; text-align:center; letter-spacing:2px; margin-bottom: 20px;">2026 LOOKBOOK</h2>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800" style="width:100%; border-radius:12px;">
+        <img src="https://images.unsplash.com/photo-1523398002811-999aa8d9511e?auto=format&fit=crop&q=80&w=800" style="width:100%; border-radius:12px;">
+        <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&q=80&w=800" style="grid-column: span 2; width:100%; border-radius:12px;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div class="admin-login-overlay" id="adminLoginOverlay">
+  <div class="admin-login-modal">
+    <button class="modal-close" onclick="closeAdminLogin()">✕</button>
+    <div class="admin-login-inner">
+      <h2>Admin Girişi</h2>
+      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+        <div class="admin-field"><input type="text" id="adminUser" placeholder="Kullanıcı adı" required></div>
+        <div class="admin-field"><input type="password" id="adminPass" placeholder="Şifre" required></div>
+        <div class="admin-login-error" id="adminLoginError"></div>
+        <button type="submit" class="btn-primary full">Giriş Yap</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL PRO -->
+<div class="admin-panel-overlay" id="adminPanelOverlay">
+  <div class="admin-panel pro-version">
+    <div class="admin-panel-header">
+      <div class="admin-panel-title"><h2>DroxStore Management v2.0</h2></div>
+      <div class="admin-header-actions">
+        <button class="btn-primary" style="padding:8px 16px; font-size:11px;" onclick="adminLogout()">Çıkış</button>
+        <button class="admin-close-btn" onclick="closeAdminPanel()">✕</button>
+      </div>
+    </div>
+
+    <div class="admin-body">
+      <div class="admin-side-nav">
+        <div class="admin-tab active" data-tab="tab-list">Ürün Listesi</div>
+        <div class="admin-tab" data-tab="tab-add">Yeni Ürün Ekle</div>
+        <div class="admin-tab" data-tab="tab-cats">Kategori Yönetimi</div>
+        <div class="admin-tab" data-tab="tab-orders">Siparişler</div>
+      </div>
+
+      <!-- TAB: PRODUCT LIST -->
+      <div class="admin-tab-content active" id="tab-list">
+        <div class="admin-stats">
+          <div class="admin-stat-card"><span class="admin-stat-num" id="statTotal">0</span><span class="admin-stat-label">Toplam Ürün</span></div>
+        </div>
+        <div class="admin-product-list" id="adminProductList"></div>
+      </div>
+
+      <!-- TAB: ADD PRODUCT -->
+      <div class="admin-tab-content" id="tab-add">
+        <form id="addProductForm" onsubmit="handleAddProduct(event)">
+          <div class="admin-form-grid">
+            <div class="admin-field"><label>Ürün Adı *</label><input type="text" id="prodName" required></div>
+            <div class="admin-field"><label>Kategori *</label><select id="prodCategory" required></select></div>
+            <div class="admin-field"><label>Fiyat (₺) *</label><input type="number" id="prodPrice" required></div>
+            <div class="admin-field"><label>Etiket</label><select id="prodBadge"><option value="">Yok</option><option value="Yeni">Yeni</option><option value="Limited">Limited</option><option value="Hot">Hot</option></select></div>
+          </div>
+          <div class="admin-field" style="margin-bottom:15px;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+              <input type="checkbox" id="prodFeatured" style="width:20px; height:20px;">
+              <span>Ana Sayfada Öne Çıkar (Top Drops Bölümünde Listele)</span>
+            </label>
+          </div>
+          <div class="admin-field"><label>Açıklama</label><textarea id="prodDesc" rows="3"></textarea></div>
+          <div class="admin-field"><label>Görseller (Maks 5) *</label>
+            <div class="image-upload-area" onclick="document.getElementById('prodImages').click()">
+              <input type="file" id="prodImages" accept="image/*" multiple onchange="handleMultiImageUpload(event)" style="display:none">
+              <div class="upload-placeholder" id="uploadPlaceholder"><span>Tıkla ve En Az 1 Görsel Seç</span></div>
+              <div class="multi-img-preview" id="imagePreviewArea"></div>
+            </div>
+          </div>
+          <div class="admin-field"><label>Bedenlere Göre Stok Adetleri</label>
+            <div class="stock-grid">
+              <div class="stock-item"><span>S:</span> <input type="number" id="s_stock" value="0" min="0"></div>
+              <div class="stock-item"><span>M:</span> <input type="number" id="m_stock" value="0" min="0"></div>
+              <div class="stock-item"><span>L:</span> <input type="number" id="l_stock" value="0" min="0"></div>
+              <div class="stock-item"><span>XL:</span> <input type="number" id="xl_stock" value="0" min="0"></div>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary full admin-submit-btn">Ürünü Yayınla</button>
+        </form>
+      </div>
+
+      <!-- TAB: CATEGORY MANAGE -->
+      <div class="admin-tab-content" id="tab-cats">
+        <div class="admin-field">
+          <label>Yeni Kategori Ekle</label>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="newCatName" placeholder="Kategori adı...">
+            <button class="btn-primary" onclick="addNewCategory()">Ekle</button>
+          </div>
+        </div>
+        <h3>Mevcut Kategoriler</h3>
+        <div class="cat-manage-list" id="adminCatList"></div>
+      </div>
+
+      <!-- TAB: ORDERS MANAGE -->
+      <div class="admin-tab-content" id="tab-orders">
+        <h3>Gelen Siparişler</h3>
+        <div class="order-list" id="adminOrderList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

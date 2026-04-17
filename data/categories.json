@@ -1,0 +1,22 @@
+[
+  {
+    "id": "cat_1",
+    "name": "T-Shirt",
+    "slug": "tshirt"
+  },
+  {
+    "id": "cat_2",
+    "name": "Hoodie",
+    "slug": "hoodie"
+  },
+  {
+    "id": "cat_3",
+    "name": "Sweatshirt",
+    "slug": "sweatshirt"
+  },
+  {
+    "id": "cat_1776359030189",
+    "name": "slalom",
+    "slug": "slalom"
+  }
+]

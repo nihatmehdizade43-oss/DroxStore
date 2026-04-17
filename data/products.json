@@ -1,0 +1,21 @@
+[
+  {
+    "id": "prod_1776359062493_09e733",
+    "name": "vih",
+    "category": "tshirt",
+    "price": 689,
+    "oldPrice": null,
+    "badge": null,
+    "badgeClass": "",
+    "sizes": [
+      "M",
+      "L"
+    ],
+    "colors": [],
+    "desc": "fufuvgv",
+    "imagePaths": [
+      "img_1776359062466_28d285.png"
+    ],
+    "createdAt": "2026-04-16T17:04:22.494Z"
+  }
+]

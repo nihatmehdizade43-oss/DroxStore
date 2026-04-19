@@ -53,7 +53,7 @@ try {
 
 // ─── APP SETUP ──────────────────────────────────────────────────
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
@@ -104,6 +104,89 @@ function checkDb(req, res, next) {
   if (!db) return res.status(500).json({ error: 'Firebase veritabanı aktif değil. Sunucu yöneticisine başvurun.' });
   next();
 }
+
+// Firebase Müşteri Doğrulama Middleware
+async function authenticateFirebaseToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Yetkilendirme gerekli' });
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    req.user = decodedToken;
+    next();
+  } catch(err) {
+    res.status(403).json({ error: 'Geçersiz müşteri oturumu' });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ API: CUSTOMERS (SYNCHRONIZE & PROFILE) ═══════════════════
+// ═══════════════════════════════════════════════════════════════
+app.post('/api/customers/sync', [checkDb, authenticateFirebaseToken], async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const { email, name, photoURL } = req.body;
+    
+    const docRef = db.collection('customers').doc(uid);
+    const doc = await docRef.get();
+    
+    let finalPhotoURL = photoURL || null;
+    let address = {};
+
+    // Eğer Fotoğraf URL'si Google/Açık Link ve Cloudinary'de değilse Cloudinary'ye at:
+    if (photoURL && typeof photoURL === 'string' && !photoURL.includes('cloudinary.com')) {
+      try {
+        const uploadRes = await cloudinary.uploader.upload(photoURL, {
+          folder: 'droxstore_customers'
+        });
+        finalPhotoURL = uploadRes.secure_url;
+      } catch(e) {
+        console.warn("Cloudinary Upload Hatası:", e.message);
+      }
+    }
+
+    if (!doc.exists) {
+      await docRef.set({
+        email: email || req.user.email,
+        name: name || req.user.name || 'İsimsiz Üye',
+        photoURL: finalPhotoURL,
+        address: {},
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      // Zaten var, Sadece adresi ve mevcut fotoyu alalım (eğer boşsa güncelle)
+      const existingData = doc.data();
+      address = existingData.address || {};
+      if (!existingData.photoURL && finalPhotoURL) {
+        await docRef.update({ photoURL: finalPhotoURL, name: name || existingData.name });
+      } else {
+        finalPhotoURL = existingData.photoURL || finalPhotoURL;
+      }
+    }
+
+    // VIP Sistem: Kullanıcının toplam sipariş tutarını hesapla
+    let totalSpent = 0;
+    const ordersSnap = await db.collection('orders').where('email', '==', email || req.user.email).get();
+    ordersSnap.forEach(orderDoc => {
+      totalSpent += parseFloat(orderDoc.data().total || 0);
+    });
+
+    res.json({ success: true, user: { uid, email: email || req.user.email, name, photoURL: finalPhotoURL, address, totalSpent } });
+  } catch(err) {
+    res.status(500).json({error: err.message});
+  }
+});
+
+app.post('/api/customers/address', [checkDb, authenticateFirebaseToken], async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const { address } = req.body;
+    await db.collection('customers').doc(uid).update({ address });
+    res.json({ success: true, address });
+  } catch(err) {
+    res.status(500).json({error: err.message});
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════
 // ═══ API: CATEGORIES (FIREBASE) ═══════════════════════════════
@@ -220,6 +303,30 @@ app.delete('/api/products/:id', [checkDb, authenticateToken], async (req, res) =
   }
 });
 
+// Ürün Düzenleme (Admin)
+app.put('/api/products/:id', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    const docRef = db.collection('products').doc(req.params.id);
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Ürün bulunamadı' });
+
+    const { name, category, price, desc, sizes, stock } = req.body;
+    const updateData = {};
+    if (name !== undefined) updateData.name = name.trim();
+    if (category !== undefined) updateData.category = category;
+    if (price !== undefined) updateData.price = parseFloat(price);
+    if (desc !== undefined) updateData.desc = desc.trim();
+    if (sizes !== undefined) updateData.sizes = sizes;
+    if (stock !== undefined) updateData.stock = stock;
+    updateData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+
+    await docRef.update(updateData);
+    res.json({ success: true, message: 'Ürün güncellendi' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════
 // ═══ API: ORDERS (FIREBASE) ═══════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
@@ -235,7 +342,7 @@ app.get('/api/orders', [checkDb, authenticateToken], async (req, res) => {
 
 app.post('/api/orders', checkDb, async (req, res) => {
   try {
-    const { customerName, phone, address, items, total } = req.body;
+    const { customerName, phone, address, items, total, appliedDiscountInfo, email } = req.body;
 
     if (!customerName || !phone || !address || !items || items.length === 0) {
       return res.status(400).json({ error: 'Eksik veya hatalı sipariş bilgisi.' });
@@ -259,10 +366,12 @@ app.post('/api/orders', checkDb, async (req, res) => {
     const orderRef = db.collection('orders').doc();
     const orderData = {
       customerName,
+      email: email || null,
       phone,
       address,
       items,
       total,
+      appliedDiscountInfo: appliedDiscountInfo || '',
       status: 'Yeni',
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     };
@@ -290,6 +399,7 @@ app.get('/api/stats', [checkDb, authenticateToken], async (req, res) => {
   try {
     const productsSnap = await db.collection('products').get();
     const ordersSnap = await db.collection('orders').get();
+    const usersSnap = await db.collection('customers').get();
 
     let totalStock = 0;
     productsSnap.docs.forEach(doc => {
@@ -297,11 +407,264 @@ app.get('/api/stats', [checkDb, authenticateToken], async (req, res) => {
       if (stock) { Object.values(stock).forEach(v => totalStock += Number(v)); }
     });
 
+    let totalSales = 0;
+    let totalRevenue = 0;
+    ordersSnap.docs.forEach(doc => {
+      const order = doc.data();
+      totalRevenue += parseFloat(order.total || 0);
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => totalSales += parseInt(item.qty || 1));
+      }
+    });
+
     res.json({
       totalProducts: productsSnap.size,
       totalOrders: ordersSnap.size,
-      totalStock
+      totalStock,
+      totalUsers: usersSnap.size,
+      totalSales,
+      totalRevenue
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ API: DISCOUNTS (FIREBASE) ════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/discounts', checkDb, async (req, res) => {
+  try {
+    const snapshot = await db.collection('discounts').orderBy('createdAt', 'desc').get();
+    const discounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(discounts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/discounts', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    const { code, percent, validDays } = req.body;
+    if (!code || !percent) return res.status(400).json({ error: 'Kod ve İndirim Yüzdesi gerekli' });
+
+    const codeUpper = code.toUpperCase().trim();
+    
+    // Check if code exists
+    const existing = await db.collection('discounts').where('code', '==', codeUpper).get();
+    if (!existing.empty) return res.status(400).json({ error: 'Bu indirim kodu zaten mevcut!' });
+
+    // Expiry calculation
+    let validUntil = null;
+    if (validDays && parseInt(validDays) > 0) {
+        validUntil = new Date();
+        validUntil.setDate(validUntil.getDate() + parseInt(validDays));
+    }
+
+    const newDiscRef = db.collection('discounts').doc();
+    const discData = {
+      code: codeUpper,
+      percent: parseFloat(percent),
+      validUntil: validUntil ? validUntil.toISOString() : null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    await newDiscRef.set(discData);
+
+    res.status(201).json({ id: newDiscRef.id, ...discData });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/discounts/:id', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    await db.collection('discounts').doc(req.params.id).delete();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ API: SETTINGS (FIREBASE) ═════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/settings', checkDb, async (req, res) => {
+  try {
+    const docRef = db.collection('settings').doc('general');
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      const defaults = { 
+        vipThreshold: 20000, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8,
+        printfulToken: '', usdToTlRate: 33.0, printfulMargin: 50
+      };
+      await docRef.set(defaults);
+      return res.json(defaults);
+    }
+    res.json(doc.data());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/settings', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    const newSettings = req.body;
+    await db.collection('settings').doc('general').set(newSettings, { merge: true });
+    res.json({ success: true, settings: newSettings });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ API: PRINTFUL INTEGRATION ════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    const docRef = db.collection('settings').doc('general');
+    const doc = await docRef.get();
+    const st = doc.exists ? doc.data() : {};
+    
+    const pToken = st.printfulToken;
+    const rate = parseFloat(st.usdToTlRate) || 33.0;
+    const margin = parseFloat(st.printfulMargin) || 50;
+
+    if (!pToken) {
+      return res.status(400).json({ error: "Sistem Ayarlarından Printful Token eklemelisiniz." });
+    }
+
+    const headers = { 'Authorization': `Bearer ${pToken}` };
+    const prRes = await fetch('https://api.printful.com/store/products', { headers });
+    const prData = await prRes.json();
+    
+    if (prData.code !== 200) {
+      return res.status(400).json({ error: "Printful API Hatası: " + (prData.error || prData.message || JSON.stringify(prData)) });
+    }
+
+    const products = prData.result;
+    let syncedCount = 0;
+
+    for (const p of products) {
+      const detailRes = await fetch(`https://api.printful.com/store/products/${p.id}`, { headers });
+      const detailData = await detailRes.json();
+      const details = detailData.result;
+      
+      if (!details || !details.sync_variants) continue;
+      
+      let maxRetailPrice = 0;
+      let sizes = [];
+      let imagesList = [];
+      
+      details.sync_variants.forEach(v => {
+         const rp = parseFloat(v.retail_price) || 0;
+         if (rp > maxRetailPrice) maxRetailPrice = rp;
+         
+         // Varyantın mockup resmini topla
+         if (v.files) {
+           v.files.forEach(f => {
+             if (f.type === 'preview' && f.preview_url && !imagesList.includes(f.preview_url)) {
+               imagesList.push(f.preview_url);
+             }
+           });
+         }
+         
+         // Varyant isimden bedeni ayıklama - Printful yapısında genelde "/" dan sonra yazar
+         const splitName = v.name.split('/');
+         if(splitName.length > 1) {
+            let sizePart = splitName[1].replace(')', '').trim();
+            if(!sizes.includes(sizePart)) sizes.push(sizePart);
+         }
+      });
+
+      // Eğer varyantlardan resim gelemediyse, ürün thumbnail'ini kullan
+      if (imagesList.length === 0 && details.sync_product.thumbnail_url) {
+        imagesList.push(details.sync_product.thumbnail_url);
+      }
+
+      if(sizes.length === 0) sizes = ["Standart", "S", "M", "L", "XL"];
+      
+      // Türkiye Satış Fiyatı Hesaplama: (Printful USD Fiyatı) * KUR * (1 + Kar Marjı)
+      const finalPriceTl = Math.ceil(maxRetailPrice * rate * (1 + (margin / 100)));
+
+      // Sonsuz stok yapısı
+      const stockData = {};
+      sizes.forEach(s => { stockData[s] = 999; });
+
+      const productData = {
+        name: details.sync_product.name,
+        desc: 'Printful Özel Tasarım Premium Baskılı Ürün.',
+        price: finalPriceTl,
+        category: 'Printful Tasarımları',
+        sizes: sizes,
+        stock: stockData,
+        images: imagesList, // Printful mockup görselleri
+        isPrintful: true,
+        printfulId: p.id,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      const existQuery = await db.collection('products').where('printfulId', '==', p.id).get();
+      
+      if (existQuery.empty) {
+        productData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+        await db.collection('products').add(productData);
+      } else {
+        const dId = existQuery.docs[0].id;
+        await db.collection('products').doc(dId).update(productData);
+      }
+      
+      syncedCount++;
+    }
+
+    res.json({ success: true, message: `${syncedCount} adet Printful ürünü başarıyla senkronize edildi.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ API: REVIEWS (FIREBASE) ══════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/reviews/:productId', checkDb, async (req, res) => {
+  try {
+    const snapshot = await db.collection('reviews')
+                             .where('productId', '==', req.params.productId)
+                             .get();
+
+    // Firebase'de composite index hatasından kaçınmak için mem. filter + sort yapıyoruz
+    const reviews = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return { 
+        id: doc.id, 
+        ...data, 
+        timeMs: data.createdAt ? data.createdAt.toMillis() : Date.now() 
+      };
+    }).sort((a,b) => b.timeMs - a.timeMs);
+
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/reviews', [checkDb, authenticateFirebaseToken], async (req, res) => {
+  try {
+    const { productId, rating, comment, userName, userPhoto } = req.body;
+    if (!productId || !rating) return res.status(400).json({ error: 'Eksik bilgi (Puan veya Ürün kimliği yok)' });
+    
+    const uid = req.user.uid;
+    const reviewData = {
+      productId,
+      uid,
+      userName: userName || 'Anonim Müşteri',
+      userPhoto: userPhoto || null,
+      rating: Math.max(1, Math.min(5, parseInt(rating))),
+      comment: (comment || '').trim(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    const docRef = await db.collection('reviews').add(reviewData);
+    res.status(201).json({ success: true, review: { id: docRef.id, ...reviewData } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -313,3 +676,17 @@ app.get('/{*splat}', (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`🚀 DroxStore Cloud Server running on port ${PORT}`));
+// --- SUPPORT TICKETS API ---
+let supportTickets = [];
+app.post('/api/support/ticket', (req, res) => {
+  const ticket = { id: Date.now().toString(), issue: req.body.issue, user: req.body.user, date: new Date().toISOString() };
+  supportTickets.push(ticket);
+  res.json({ success: true });
+});
+app.get('/api/support/tickets', (req, res) => {
+  res.json(supportTickets);
+});
+app.delete('/api/support/tickets/:id', (req, res) => {
+  supportTickets = supportTickets.filter(t => t.id !== req.params.id);
+  res.json({ success: true });
+});

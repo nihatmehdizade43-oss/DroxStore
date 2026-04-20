@@ -65,9 +65,9 @@ const API = {
   },
   async authAction(url, method, body = null, isFormData = false) {
     const headers = {};
-    if (adminToken && url.includes('/api/auth') === false && !url.includes('/api/customers')) {
+    if (adminToken && url.includes('/api/auth') === false && !url.includes('/api/customers') && !url.includes('/api/reviews')) {
       headers['Authorization'] = `Bearer ${adminToken}`;
-    } else if (customerToken && url.includes('/api/customers')) {
+    } else if (customerToken && (url.includes('/api/customers') || url.includes('/api/reviews'))) {
       headers['Authorization'] = `Bearer ${customerToken}`;
     }
     if (!isFormData) headers['Content-Type'] = 'application/json';
@@ -103,20 +103,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initLanguageMenu() {
-  // Auto-detect lang on first visit
-  const sysLang = navigator.language.substring(0,2);
   const cookieMatch = document.cookie.match(/googtrans=\/tr\/([a-zA-Z-]+)/);
   let currentLang = cookieMatch ? cookieMatch[1] : null;
 
-  if (!localStorage.getItem('lang_initialized')) {
-    localStorage.setItem('lang_initialized', 'true');
-    // Set auto mapping
-    const valid = ['en','de','fr','es','ru','ar','it','pt','zh-CN'];
-    if (sysLang !== 'tr' && valid.includes(sysLang) && !currentLang) {
-      setLanguage(sysLang);
-      return; 
-    }
-  }
+  // Otomatik dil değiştirici kaldırıldı. Sadece mevcut dili göster.
 
   // Update UI to current lang
   if (currentLang && currentLang !== 'tr') {
@@ -293,6 +283,7 @@ function initTabs() {
 function initModal() {
   const mo = document.getElementById('modalOverlay');
   mo?.addEventListener('click', e => { if (e.target === mo) closeModal(); });
+  document.getElementById('modalClose')?.addEventListener('click', closeModal);
 }
 
 function openModal(id) {
@@ -381,6 +372,7 @@ function renderReviews(productId, reviews) {
             <label for="star1">★</label>
           </div>
           <textarea id="reviewComment" rows="3" placeholder="Bu ürün hakkında ne düşünüyorsunuz?" style="width:100%; border-radius:6px; padding:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; margin-bottom:10px; font-family:inherit;" required></textarea>
+          <input type="file" id="reviewImage" accept="image/*" style="width:100%; margin-bottom:10px; padding:8px; background:rgba(255,255,255,0.05); border-radius:6px; border:1px solid rgba(255,255,255,0.1); color:white; font-size:12px;">
           <button type="submit" class="btn-primary" style="padding: 8px 15px; font-size:12px;">Gönder</button>
         </form>
       </div>
@@ -407,6 +399,7 @@ function renderReviews(productId, reviews) {
             </div>
             <div class="review-stars">${stars}</div>
             <div class="review-text">${r.comment.replace(/</g, "&lt;")}</div>
+            ${r.imageUrl ? `<div style="margin-top:10px;"><img src="${r.imageUrl}" style="max-height:120px; border-radius:8px; object-fit:contain; background:rgba(0,0,0,0.5);"></div>` : ''}
          </div>
        `;
     }).join('');
@@ -421,6 +414,7 @@ async function submitReview(e, productId) {
   const form = e.target;
   const ratingInput = form.querySelector('input[name="rating"]:checked');
   const comment = form.querySelector('#reviewComment').value;
+  const imageInput = form.querySelector('#reviewImage');
 
   if(!ratingInput) return showToast('Lütfen yıldız ile puan verin.');
   
@@ -429,17 +423,22 @@ async function submitReview(e, productId) {
   btn.textContent = 'Gönderiliyor...';
 
   try {
-    await API.authAction('/api/reviews', 'POST', {
-      productId,
-      rating: ratingInput.value,
-      comment,
-      userName: customerData.name,
-      userPhoto: customerData.photoURL
-    });
+    const formData = new FormData();
+    formData.append('productId', productId);
+    formData.append('rating', ratingInput.value);
+    formData.append('comment', comment);
+    formData.append('userName', customerData.name);
+    formData.append('userPhoto', customerData.photoURL || '');
+    if (imageInput && imageInput.files[0]) {
+      formData.append('image', imageInput.files[0]);
+    }
+
+    await API.authAction('/api/reviews', 'POST', formData, true);
     showToast('Değerlendirmeniz başarıyla eklendi!');
     fetchAndRenderReviews(productId);
   } catch(err) {
     showToast('Hata: ' + err.message);
+  } finally {
     btn.disabled = false;
     btn.textContent = 'Gönder';
   }
@@ -864,14 +863,31 @@ async function handleGoogleLogin() {
   btn.disabled = true; btn.style.opacity = '0.5';
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    const result = await firebase.auth().signInWithPopup(provider);
-    await syncFirebaseUserWithBackend(result.user, result.user.displayName);
+    provider.addScope('profile');
+    provider.addScope('email');
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      await firebase.auth().signInWithRedirect(provider);
+    } else {
+      const result = await firebase.auth().signInWithPopup(provider);
+      await syncFirebaseUserWithBackend(result.user, result.user.displayName);
+    }
   } catch (err) {
     showToast('Google Girişi iptal edildi veya hata oluştu.');
   } finally {
     btn.disabled = false; btn.style.opacity = '1';
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  firebase.auth().getRedirectResult().then(async (result) => {
+    if (result.user) {
+      await syncFirebaseUserWithBackend(result.user, result.user.displayName);
+    }
+  }).catch(err => {
+    console.error("Google Auth Redirect Error: ", err);
+    showToast("Google Girişi yapılamadı.");
+  });
+});
 
 // ─── EMAIL LOGIN & REGISTER ─────────────────────────────────────
 async function handleUserRegister(e) {
@@ -1512,20 +1528,9 @@ function findSavedLocation() {
 // --- GEO CURRENCY AUTO RATE ---
 let geoCurrencyTriggered = false;
 async function detectGeoCurrency() {
-  if(geoCurrencyTriggered) return;
-  geoCurrencyTriggered = true;
-  try {
-    const res = await fetch('https://ipapi.co/json/');
-    const data = await res.json();
-    if(data.country_code && data.country_code !== 'TR') {
-       if(document.getElementById('langCurrent').innerText === 'TR') {
-         if(typeof showToast === 'function') showToast(data.country_name + ' tespit edildi. Fiyatlar otomatik çevriliyor.', 'success');
-         if(typeof setLanguage === 'function') setLanguage(data.country_code === 'AZ' ? 'az' : 'en');
-       }
-    }
-  } catch(e) { console.log('Geo detection failed', e); }
+  // Kaldırıldı. 
 }
-document.addEventListener('DOMContentLoaded', () => { setTimeout(detectGeoCurrency, 1500); });
+// document.addEventListener('DOMContentLoaded', () => { setTimeout(detectGeoCurrency, 1500); });
 
 // --- PROFILE DASHBOARD TABS ---
 document.addEventListener('click', e => {

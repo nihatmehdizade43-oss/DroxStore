@@ -647,7 +647,7 @@ app.get('/api/reviews/:productId', checkDb, async (req, res) => {
   }
 });
 
-app.post('/api/reviews', [checkDb, authenticateFirebaseToken], async (req, res) => {
+app.post('/api/reviews', [checkDb, authenticateFirebaseToken, upload.single('image')], async (req, res) => {
   try {
     const { productId, rating, comment, userName, userPhoto } = req.body;
     if (!productId || !rating) return res.status(400).json({ error: 'Eksik bilgi (Puan veya Ürün kimliği yok)' });
@@ -660,6 +660,7 @@ app.post('/api/reviews', [checkDb, authenticateFirebaseToken], async (req, res) 
       userPhoto: userPhoto || null,
       rating: Math.max(1, Math.min(5, parseInt(rating))),
       comment: (comment || '').trim(),
+      imageUrl: req.file ? req.file.path : null,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     };
     

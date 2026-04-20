@@ -231,7 +231,7 @@ function createProductCard(p, i) {
       </div>
       <div class="prod-info">
         <div class="prod-name">${p.name}</div>
-        <div class="prod-price">₺${Number(p.price).toLocaleString('tr')}</div>
+        <div class="prod-price">$${Number(p.price).toLocaleString('en-US')}</div>
       </div>
     </div>
   `;
@@ -317,7 +317,7 @@ function openModal(id) {
       <div class="modal-details">
         <div class="modal-tag">${stockInfo}</div>
         <h2 class="modal-title">${p.name}</h2>
-        <div class="modal-price">₺${Number(p.price).toLocaleString('tr')}</div>
+        <div class="modal-price">$${Number(p.price).toLocaleString('en-US')}</div>
         <div class="modal-section-label">Açıklama</div>
         <p class="modal-desc">${p.desc || 'Bu ürün detayına henüz bir açıklama girilmemiş.'}</p>
         <div class="size-selection" style="margin-top:10px; display:flex; gap:10px;">Beden: ${sizesHTML}</div>
@@ -509,9 +509,9 @@ function updateCartUI() {
   const tEl = document.getElementById('cartTotal'); 
   if(tEl) {
     if (calc.discountAmount > 0) {
-      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">₺${calc.subTotal.toLocaleString('tr')}</span> <span style="color:#4ade80;">₺${calc.finalTotal.toLocaleString('tr')}</span>`;
+      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">$${calc.subTotal.toLocaleString('en-US')}</span> <span style="color:#4ade80;">$${calc.finalTotal.toLocaleString('en-US')}</span>`;
     } else {
-      tEl.textContent = '₺' + calc.subTotal.toLocaleString('tr');
+      tEl.textContent = '$' + calc.subTotal.toLocaleString('en-US');
     }
   }
 }
@@ -522,7 +522,7 @@ function renderCart() {
   el.innerHTML = cart.map((item, idx) => `
     <div class="cart-item">
       <div class="cart-item-img"><img src="${item.image || ''}"></div>
-      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | ₺${item.price} x ${item.qty}</span></div>
+      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | $${item.price} x ${item.qty}</span></div>
       <button class="cart-item-remove" onclick="removeFromCart(${idx})">✕</button>
     </div>
   `).join('');
@@ -569,13 +569,13 @@ function calculateCartTotals() {
 function refreshCheckoutTotal() {
   const calc = calculateCartTotals();
   const tEl = document.getElementById('chkBtnTotal');
-  if(tEl) tEl.textContent = calc.finalTotal.toLocaleString('tr');
+  if(tEl) tEl.textContent = calc.finalTotal.toLocaleString('en-US');
   
   const sumEl = document.getElementById('discountSummary');
   if(sumEl) {
     if(calc.discountAmount > 0) {
       sumEl.style.display = 'block';
-      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: ₺${calc.discountAmount.toLocaleString('tr')}</strong>`;
+      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: $${calc.discountAmount.toLocaleString('en-US')}</strong>`;
     } else {
       sumEl.style.display = 'none';
       document.getElementById('promoMessage').style.display = 'none';
@@ -748,7 +748,7 @@ async function processCheckout() {
     showToast('Sipariş verilirken hata oluştu: ' + err.message);
   } finally {
     btn.disabled = false; 
-    btn.innerHTML = `Siparişi Onayla · ₺<span id="chkBtnTotal">${total.toLocaleString('tr')}</span>`;
+    btn.innerHTML = `Siparişi Onayla · $<span id="chkBtnTotal">${total.toLocaleString('en-US')}</span>`;
   }
 }
 
@@ -765,20 +765,27 @@ function closeUserDrawer() {
 document.getElementById('userOverlay')?.addEventListener('click', closeUserDrawer);
 
 function switchUserTab(tab) {
+  const l = document.getElementById('userLoginForm');
+  const r = document.getElementById('userRegForm');
+  const f = document.getElementById('userForgotForm');
+  const tl = document.getElementById('tabLogin');
+  const tr = document.getElementById('tabRegister');
+  
+  if(l) l.style.display = 'none';
+  if(r) r.style.display = 'none';
+  if(f) f.style.display = 'none';
+  
+  if(tl) { tl.style.backgroundColor = 'transparent'; tl.style.borderColor = 'var(--border)'; }
+  if(tr) { tr.style.backgroundColor = 'transparent'; tr.style.borderColor = 'var(--border)'; }
+
   if(tab === 'login') {
-    document.getElementById('userLoginForm').style.display = 'flex';
-    document.getElementById('userRegForm').style.display = 'none';
-    document.getElementById('tabLogin').style.backgroundColor = 'rgba(255,255,255,0.05)';
-    document.getElementById('tabRegister').style.backgroundColor = 'transparent';
-    document.getElementById('tabLogin').style.borderColor = 'var(--accent)';
-    document.getElementById('tabRegister').style.borderColor = 'var(--border)';
-  } else {
-    document.getElementById('userLoginForm').style.display = 'none';
-    document.getElementById('userRegForm').style.display = 'flex';
-    document.getElementById('tabLogin').style.backgroundColor = 'transparent';
-    document.getElementById('tabRegister').style.backgroundColor = 'rgba(255,255,255,0.05)';
-    document.getElementById('tabLogin').style.borderColor = 'var(--border)';
-    document.getElementById('tabRegister').style.borderColor = 'var(--accent)';
+    if(l) l.style.display = 'flex';
+    if(tl) { tl.style.backgroundColor = 'rgba(255,255,255,0.05)'; tl.style.borderColor = 'var(--accent)'; }
+  } else if (tab === 'register') {
+    if(r) r.style.display = 'flex';
+    if(tr) { tr.style.backgroundColor = 'rgba(255,255,255,0.05)'; tr.style.borderColor = 'var(--accent)'; }
+  } else if (tab === 'forgot') {
+    if(f) f.style.display = 'flex';
   }
 }
 
@@ -916,6 +923,23 @@ async function handleUserLogin(e) {
   }
 }
 
+async function handleForgotPassword(e) {
+  e.preventDefault();
+  const email = document.getElementById('fEmail').value;
+  const btn = e.target.querySelector('button');
+  btn.disabled = true; btn.textContent = 'Gönderiliyor...';
+  try {
+    await firebase.auth().sendPasswordResetEmail(email);
+    showToast('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi! Lütfen gelen kutunuzu kontrol edin.', 'success');
+    document.getElementById('fEmail').value = '';
+    switchUserTab('login');
+  } catch(err) {
+    showToast('Sıfırlama hatası: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sıfırlama Linki Gönder';
+  }
+}
+
 function handleUserLogout() {
   firebase.auth().signOut().then(() => {
     customerToken = null; customerData = null;
@@ -1010,7 +1034,7 @@ async function refreshAdminPanel() {
     if(statTotal) statTotal.textContent = stats.totalProducts;
     if(statUsers) statUsers.textContent = stats.totalUsers || 0;
     if(statSales) statSales.textContent = stats.totalSales || 0;
-    if(statRevenue) statRevenue.textContent = (stats.totalRevenue || 0).toLocaleString('tr-TR') + '₺';
+    if(statRevenue) statRevenue.textContent = (stats.totalRevenue || 0).toLocaleString('en-US') + '$';
     
     // Product List
     const pList = document.getElementById('adminProductList');
@@ -1021,7 +1045,7 @@ async function refreshAdminPanel() {
         <div class="admin-product-thumb"><img src="${p.images?.[0] || ''}"></div>
         <div class="admin-product-details">
           <strong>${p.name} ${p.isFeatured ? '<span style="color:gold;">★</span>' : ''} ${p.isPrintful ? '<span style="color:#6366f1; font-size:10px;">PRINTFUL</span>' : ''}</strong>
-          <span style="font-size:11px;">${p.category} · ₺${p.price} | Stok: ${stockTxt}</span>
+          <span style="font-size:11px;">${p.category} · $${p.price} | Stok: ${stockTxt}</span>
         </div>
         <div class="admin-product-actions" style="display:flex; gap:5px;">
           <button class="admin-delete-btn" style="border-color:#6366f1; color:#6366f1;" onclick="openEditProduct('${p.id}')">Düzenle</button>
@@ -1040,7 +1064,7 @@ async function refreshAdminPanel() {
         <div class="order-card">
           <div class="order-header">
             <span>Sipariş #${o.id.substring(0,6)}</span>
-            <span>₺${o.total}</span>
+            <span>$${o.total}</span>
           </div>
           <div><strong style="color:var(--accent);">Müşteri:</strong> ${o.customerName} - ${o.phone}</div>
           <div style="margin-top:8px; margin-bottom:8px; padding: 10px; background: rgba(0,0,0,0.3); border-left: 2px solid var(--accent); border-radius:4px;">
@@ -1421,7 +1445,7 @@ async function loadSupportTickets() {
         </div>
         <div class="order-items">
           Sorun: ${t.issue}<br>
-          Tarih: ${new Date(t.date).toLocaleString('tr-TR')}
+          Tarih: ${new Date(t.date).toLocaleString('en-US')}
         </div>
       `;
       list.appendChild(el);

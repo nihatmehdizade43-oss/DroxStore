@@ -87,21 +87,6 @@
   </div>
   <a href="/" class="logo">DROX<span>STORE</span></a>
   <div class="nav-right">
-    <div class="lang-selector">
-      <div class="lang-current" id="langCurrent" onclick="toggleLangMenu()">TR</div>
-      <div class="lang-menu" id="langMenu">
-        <a href="#" onclick="setLanguage('tr')">🇹🇷 TR</a>
-        <a href="#" onclick="setLanguage('en')">🇬🇧 EN</a>
-        <a href="#" onclick="setLanguage('de')">🇩🇪 DE</a>
-        <a href="#" onclick="setLanguage('fr')">🇫🇷 FR</a>
-        <a href="#" onclick="setLanguage('es')">🇪🇸 ES</a>
-        <a href="#" onclick="setLanguage('ru')">🇷🇺 RU</a>
-        <a href="#" onclick="setLanguage('ar')">🇸🇦 AR</a>
-        <a href="#" onclick="setLanguage('zh-CN')">🇨🇳 ZH</a>
-        <a href="#" onclick="setLanguage('it')">🇮🇹 IT</a>
-        <a href="#" onclick="setLanguage('pt')">🇵🇹 PT</a>
-      </div>
-    </div>
     <a href="#" class="nav-link" onclick="event.preventDefault(); openPromotions()">Kampanyalar</a>
     <a href="#" class="nav-link" onclick="event.preventDefault(); openLookbook()">Lookbook</a>
     <button class="cart-btn" id="userBtn" onclick="openUserDrawer()" style="margin-right: -10px;">
@@ -201,7 +186,7 @@
   <div class="cart-header"><h3>Sepetim (<span id="cartItemCount">0</span>)</h3><button class="cart-close" id="cartClose">✕</button></div>
   <div class="cart-items" id="cartItems"></div>
   <div class="cart-footer">
-    <div class="cart-total"><span>Toplam</span><span id="cartTotal">₺0</span></div>
+    <div class="cart-total"><span>Toplam</span><span id="cartTotal">$0</span></div>
     <button class="btn-primary full" onclick="openCheckout()">Ödemeye Geç</button>
   </div>
 </div>
@@ -286,7 +271,7 @@
           <div id="discountSummary" style="font-size: 13px; margin-top: 10px; color: #4ade80; display: none;"></div>
         </div>
 
-        <button type="button" class="btn-primary full chk-submit-btn" id="chkSubmitBtn" onclick="processCheckout()" style="margin-top:15px; padding: 16px;">Siparişi Onayla · ₺<span id="chkBtnTotal">0</span></button>
+        <button type="button" class="btn-primary full chk-submit-btn" id="chkSubmitBtn" onclick="processCheckout()" style="margin-top:15px; padding: 16px;">Siparişi Onayla · $<span id="chkBtnTotal">0</span></button>
       </div>
     </div>
   </div>
@@ -359,6 +344,15 @@
         <input type="email" id="lEmail" placeholder="E-Posta" required>
         <input type="password" id="lPass" placeholder="Şifre" required>
         <button type="submit" class="btn-primary full" style="margin-top:10px;">Giriş Yap</button>
+        <a href="#" onclick="switchUserTab('forgot')" style="font-size:12px; color:var(--text-muted); text-align:center; display:block; margin-top:5px; text-decoration:none;">Şifrenizi mi unuttunuz?</a>
+      </form>
+
+      <!-- Forgot Pass Form -->
+      <form id="userForgotForm" class="checkout-fields" style="display:none;" onsubmit="handleForgotPassword(event)">
+        <p style="font-size:12px; color:#aaa; margin-bottom:10px;">Şifrenizi sıfırlamak için kayıtlı e-posta adresinizi girin.</p>
+        <input type="email" id="fEmail" placeholder="E-Posta" required>
+        <button type="submit" class="btn-primary full" style="margin-top:10px;">Sıfırlama Linki Gönder</button>
+        <button type="button" class="btn-ghost full" style="margin-top:5px; font-size:12px;" onclick="switchUserTab('login')">Girişe Dön</button>
       </form>
 
       <!-- Reg Form -->
@@ -529,7 +523,7 @@
             <span class="admin-stat-label" style="font-size:12px; color:#888;">Satılan Ürün</span>
           </div>
           <div class="admin-stat-card" style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); text-align:center;">
-            <span class="admin-stat-num" id="statRevenue" style="display:block; font-size:32px; font-family:var(--font-display); color:#60a5fa;">0₺</span>
+            <span class="admin-stat-num" id="statRevenue" style="display:block; font-size:32px; font-family:var(--font-display); color:#60a5fa;">0$</span>
             <span class="admin-stat-label" style="font-size:12px; color:#888;">Toplam Kar/Ciro</span>
           </div>
         </div>
@@ -542,7 +536,7 @@
           <div class="admin-form-grid">
             <div class="admin-field"><label>Ürün Adı *</label><input type="text" id="prodName" required></div>
             <div class="admin-field"><label>Kategori *</label><select id="prodCategory" required></select></div>
-            <div class="admin-field"><label>Fiyat (₺) *</label><input type="number" id="prodPrice" required></div>
+            <div class="admin-field"><label>Fiyat ($) *</label><input type="number" id="prodPrice" required></div>
             <div class="admin-field"><label>Etiket</label><select id="prodBadge"><option value="">Yok</option><option value="Yeni">Yeni</option><option value="Limited">Limited</option><option value="Hot">Hot</option></select></div>
           </div>
           <div class="admin-field" style="margin-bottom:15px;">
@@ -679,7 +673,7 @@
         <input type="text" id="editProdCategory" placeholder="Kategori" style="width:100%;">
       </div>
       <div>
-        <label style="font-size:12px; color:#888;">Fiyat (₺)</label>
+        <label style="font-size:12px; color:#888;">Fiyat ($)</label>
         <input type="number" id="editProdPrice" placeholder="Fiyat" style="width:100%;">
       </div>
       <div>

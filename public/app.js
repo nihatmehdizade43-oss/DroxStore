@@ -863,31 +863,14 @@ async function handleGoogleLogin() {
   btn.disabled = true; btn.style.opacity = '0.5';
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('profile');
-    provider.addScope('email');
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      await firebase.auth().signInWithRedirect(provider);
-    } else {
-      const result = await firebase.auth().signInWithPopup(provider);
-      await syncFirebaseUserWithBackend(result.user, result.user.displayName);
-    }
+    const result = await firebase.auth().signInWithPopup(provider);
+    await syncFirebaseUserWithBackend(result.user, result.user.displayName);
   } catch (err) {
-    showToast('Google Girişi iptal edildi veya hata oluştu.');
+    showToast('Google Girişi başarısız veya pencere kapatıldı.');
   } finally {
     btn.disabled = false; btn.style.opacity = '1';
   }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  firebase.auth().getRedirectResult().then(async (result) => {
-    if (result.user) {
-      await syncFirebaseUserWithBackend(result.user, result.user.displayName);
-    }
-  }).catch(err => {
-    console.error("Google Auth Redirect Error: ", err);
-    showToast("Google Girişi yapılamadı.");
-  });
-});
 
 // ─── EMAIL LOGIN & REGISTER ─────────────────────────────────────
 async function handleUserRegister(e) {
@@ -900,15 +883,10 @@ async function handleUserRegister(e) {
   btn.disabled = true; btn.textContent = 'Kayıt Olunuyor...';
   try {
     const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
-    // İsim soyisim bilgisini Firebase profilinde sakla
     await result.user.updateProfile({ displayName: name });
-    // Onay e-postası gönder
-    await result.user.sendEmailVerification();
-    // Otomatik girişi iptal et
-    await firebase.auth().signOut();
     
-    switchUserTab('login');
-    showToast('Kayıt başarılı! Lütfen giriş yapmadan önce e-postanıza gelen linke tıklayarak hesabınızı onaylayın.');
+    // Auto sync after register so user logs in immediately!
+    await syncFirebaseUserWithBackend(result.user, name);
     
     // Formu temizle
     document.getElementById('rName').value = '';
@@ -930,15 +908,6 @@ async function handleUserLogin(e) {
   btn.disabled = true; btn.textContent = 'Giriş Yapılıyor...';
   try {
     const result = await firebase.auth().signInWithEmailAndPassword(email, password);
-    
-    // E-posta onayı kontrolü (sadece email şifre ile girenler için geçerli)
-    if (!result.user.emailVerified) {
-      await firebase.auth().signOut();
-      showToast('Giriş başarısız: Lütfen e-postanıza gelen link ile hesabınızı onaylayın.');
-      btn.disabled = false; btn.textContent = 'Giriş Yap';
-      return;
-    }
-    
     await syncFirebaseUserWithBackend(result.user, result.user.displayName);
   } catch(err) {
     showToast('Giriş reddedildi: ' + err.message);

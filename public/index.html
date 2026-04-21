@@ -231,37 +231,26 @@
       <!-- Sağ: Ödeme ve Kart -->
       <div class="checkout-right">
         <h2 style="font-family: Bebas Neue; font-size:32px; letter-spacing:2px; margin-bottom: 10px;">ÖDEME YÖNTEMİ</h2>
-        
-        <!-- İnteraktif Kredi Kartı -->
-        <div class="cc-wrapper">
-          <div class="cc-inner" id="ccBox">
-            <div class="cc-front">
-              <div class="cc-chip"></div>
-              <div class="cc-type">VISA</div>
-              <div class="cc-number" id="ccVisNum">#### #### #### ####</div>
-              <div class="cc-bot">
-                <div class="cc-name" id="ccVisName">AD SOYAD</div>
-                <div class="cc-exp" id="ccVisExp">AA/YY</div>
-              </div>
-            </div>
-            <div class="cc-back">
-              <div class="cc-mag"></div>
-              <div class="cc-cvv-box">
-                <span id="ccVisCvv">***</span>
-              </div>
+
+        <!-- ePoint Ödeme Bilgisi -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; margin-bottom: 20px; text-align: center;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; background: rgba(232,255,71,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🔒</div>
+            <div style="text-align: left;">
+              <div style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;">ePoint ile Güvenli Ödeme</div>
+              <div style="font-size: 12px; color: #888; margin-top: 2px;">Visa · Mastercard · Kapıda Ödeme</div>
             </div>
           </div>
-        </div>
-        
-        <!-- Ödeme Formu -->
-        <div class="checkout-fields cc-fields">
-          <input type="text" id="ccNum" placeholder="Kart Numarası" maxlength="19" oninput="formatCardNum(this)" onfocus="flipCard(false)" autocomplete="cc-number">
-          <div class="cc-row">
-            <input type="text" id="ccExp" placeholder="AA/YY" maxlength="5" oninput="formatCardExp(this)" onfocus="flipCard(false)" autocomplete="cc-exp">
-            <input type="text" id="ccCvv" placeholder="CVV" maxlength="3" oninput="formatCardCvv(this)" onfocus="flipCard(true)" onblur="flipCard(false)" autocomplete="cc-csc">
+          <p style="font-size: 12px; color: #666; line-height: 1.6;">
+            "Siparişi Onayla" butonuna tıkladığınızda güvenli ePoint ödeme sayfasına yönlendirileceksiniz. Kart bilgileriniz yalnızca ePoint altyapısında işlenir.
+          </p>
+          <div style="display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap;">
+            <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #aaa;">VISA</span>
+            <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #aaa;">MASTERCARD</span>
+            <span style="background: rgba(232,255,71,0.1); border: 1px solid rgba(232,255,71,0.2); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: var(--accent);">ePOINT</span>
           </div>
         </div>
-        
+
         <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
           <div style="display: flex; gap: 10px;">
             <input type="text" id="chkPromoCode" placeholder="İndirim Kodu" style="flex:1; padding: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: white; border-radius: 8px; font-family: inherit; text-transform: uppercase;">
@@ -271,7 +260,12 @@
           <div id="discountSummary" style="font-size: 13px; margin-top: 10px; color: #4ade80; display: none;"></div>
         </div>
 
-        <button type="button" class="btn-primary full chk-submit-btn" id="chkSubmitBtn" onclick="processCheckout()" style="margin-top:15px; padding: 16px;">Siparişi Onayla · $<span id="chkBtnTotal">0</span></button>
+        <button type="button" class="btn-primary full chk-submit-btn" id="chkSubmitBtn" onclick="processCheckout()" style="margin-top:15px; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+          <span>🔒 ePoint ile Öde</span>
+          <span style="opacity:0.7;">·</span>
+          <span id="chkBtnTotal">0</span> AZN
+        </button>
+        <p style="text-align:center; font-size:11px; color:#555; margin-top:8px;">SSL şifreli güvenli bağlantı</p>
       </div>
     </div>
   </div>

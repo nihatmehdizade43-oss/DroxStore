@@ -109,10 +109,13 @@ function initLanguageMenu() {
   // Otomatik dil değiştirici kaldırıldı. Sadece mevcut dili göster.
 
   // Update UI to current lang
-  if (currentLang && currentLang !== 'tr') {
-    document.getElementById('langCurrent').textContent = currentLang.toUpperCase().substring(0,2);
-  } else {
-    document.getElementById('langCurrent').textContent = 'TR';
+  const langEl = document.getElementById('langCurrent');
+  if (langEl) {
+    if (currentLang && currentLang !== 'tr') {
+      langEl.textContent = currentLang.toUpperCase().substring(0,2);
+    } else {
+      langEl.textContent = 'TR';
+    }
   }
 
   // Close drop down when clicking outside
@@ -651,104 +654,63 @@ function flipCard(back) {
 
 async function processCheckout() {
   const nameStr = document.getElementById('chkName').value;
-  const phone = document.getElementById('chkPhone').value;
-  
+  const phone   = document.getElementById('chkPhone').value;
   const country = document.getElementById('chkCountry').value;
-  const city = document.getElementById('chkCity').value;
-  const line1 = document.getElementById('chkLine1').value;
-  const line2 = document.getElementById('chkLine2').value;
-  const zip = document.getElementById('chkZip').value;
+  const city    = document.getElementById('chkCity').value;
+  const line1   = document.getElementById('chkLine1').value;
+  const line2   = document.getElementById('chkLine2').value;
+  const zip     = document.getElementById('chkZip').value;
 
-  if(!nameStr || !phone || !country || !city || !line1 || !zip) {
+  if (!nameStr || !phone || !country || !city || !line1 || !zip) {
     showToast('Lütfen teslimat alanlarını (Adres Satırı 2 hariç) eksiksiz doldurunuz.');
     return;
   }
 
   const address = `${line1}\n${line2 ? line2 + '\n' : ''}${zip} ${city}\n${country}`;
-  
-  const ccNum = document.getElementById('ccNum').value.trim();
-  const ccExp = document.getElementById('ccExp').value.trim();
-  const ccCvv = document.getElementById('ccCvv').value.trim();
+  const calc    = calculateCartTotals();
+  const total   = calc.finalTotal;
+  const email   = document.getElementById('chkEmail')?.value || (customerData?.email || '');
 
-  if(!nameStr || !phone || !address || ccNum.length < 19 || ccExp.length < 5 || ccCvv.length < 3) {
-    return showToast('Lütfen teslimat ve kart bilgilerinizi eksiksiz girin.');
-  }
-
-  // STRICT VALIDATION (Luhn Algorithm & Experiation Check)
-  const isLuhnValid = (num) => {
-    let arr = (num + '').split('').reverse().map(x => parseInt(x, 10));
-    let lastDigit = arr.splice(0, 1)[0];
-    let sum = arr.reduce((acc, val, i) => (i % 2 !== 0 ? acc + val : acc + ((val * 2) % 9 || 9)), 0);
-    return sum > 0 && (sum + lastDigit) % 10 === 0;
-  };
-
-  const strippedNum = ccNum.replace(/\\s/g, '');
-  if (!isLuhnValid(strippedNum)) {
-    return showToast('Bankanız işlemi reddetti: Geçersiz kredi kartı numarası.', 'error');
-  }
-
-  const [expMonth, expYear] = ccExp.split('/');
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = parseInt(now.getFullYear().toString().substr(-2));
-  
-  if (parseInt(expMonth) > 12 || parseInt(expMonth) < 1 || parseInt(expYear) < currentYear || (parseInt(expYear) === currentYear && parseInt(expMonth) < currentMonth)) {
-    return showToast('Geçersiz veya süresi dolmuş SKT. Lütfen tekrar kontrol edin.', 'error');
-  }
-
-  const calc = calculateCartTotals();
-  const total = calc.finalTotal;
-  const appliedDiscountInfo = calc.infoText;
   const btn = document.getElementById('chkSubmitBtn');
-  btn.disabled = true; 
-  btn.textContent = "Ödeme Alınıyor...";
+  btn.disabled  = true;
+  btn.textContent = 'ePoint\'e Yönlendiriliyor...';
 
-  // Ödeme animasyonu / Iyzico Mock bekleme süresi
-  await new Promise(r => setTimeout(r, 2000));
-  
   try {
-    await API.authAction('/api/orders', 'POST', {
-      customerName: nameStr, phone, address, items: cart, total, appliedDiscountInfo
+    // Backend'e pending sipariş oluştur + ePoint parametrelerini al
+    const result = await API.authAction('/api/payment/start', 'POST', {
+      customerName: nameStr,
+      phone,
+      address,
+      items: cart,
+      total,
+      appliedDiscountInfo: calc.infoText,
+      email
     });
-    
-    showToast('Ödeme Başarılı! Siparişiniz oluşturuldu. ✅');
-    cart = []; activeAppliedDiscount = null; saveCart(); updateCartUI();
-    
-    ['chkName', 'chkPhone', 'chkLine1', 'chkLine2', 'chkZip', 'chkCountry', 'chkCity', 'ccNum', 'ccExp', 'ccCvv', 'chkPromoCode'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.value = '';
+
+    // Sepeti localStorage'a yedekle (success sayfasında temizlemek için)
+    localStorage.setItem('drox_pending_order', result.orderId);
+
+    // ePoint ödeme sayfasına POST ile yönlendir
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = result.epointUrl;
+    form.style.display = 'none';
+
+    [['data', result.data], ['signature', result.signature]].forEach(([name, value]) => {
+      const input = document.createElement('input');
+      input.type  = 'hidden';
+      input.name  = name;
+      input.value = value;
+      form.appendChild(input);
     });
-    document.getElementById('promoMessage').style.display = 'none';
-    document.getElementById('discountSummary').style.display = 'none';
-    document.getElementById('ccVisNum').textContent = '#### #### #### ####';
-    document.getElementById('ccVisName').textContent = 'AD SOYAD';
-    document.getElementById('ccVisExp').textContent = 'AA/YY';
-    document.getElementById('ccVisCvv').textContent = '***';
-    flipCard(false);
 
-    closeCheckout();
-    await refreshAllData(); 
-    
-    // Professional Redirect to Live Tracking
-    showToast('Sipariş Onaylandı! Kargo takibine yönlendiriliyorsunuz.', 'success');
-    setTimeout(() => {
-      const uiTracker = document.getElementById('activeTrackerUI');
-      const noMsg = document.getElementById('noActiveOrderMsg');
-      const orderNum = document.getElementById('activeOrderNumber');
-      if(uiTracker && noMsg && orderNum) {
-        uiTracker.style.display = 'block';
-        noMsg.style.display = 'none';
-        orderNum.innerText = 'Sipariş No: #DX-' + Math.floor(Math.random()*90000 + 10000);
-        openUserDrawer();
-        const orderTabBtn = document.querySelector('.user-dash-tab[data-target="tab-user-orders"]');
-        if (orderTabBtn) orderTabBtn.click();
-      }
-    }, 1500);
+    document.body.appendChild(form);
+    form.submit();
 
-  } catch(err) {
-    showToast('Sipariş verilirken hata oluştu: ' + err.message);
-  } finally {
-    btn.disabled = false; 
-    btn.innerHTML = `Siparişi Onayla · $<span id="chkBtnTotal">${total.toLocaleString('en-US')}</span>`;
+  } catch (err) {
+    showToast('Ödeme başlatılamadı: ' + err.message);
+    btn.disabled = false;
+    btn.innerHTML = `Siparişi Onayla · <span id="chkBtnTotal">${total.toLocaleString('en-US')}</span>`;
   }
 }
 

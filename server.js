@@ -671,6 +671,148 @@ app.post('/api/reviews', [checkDb, authenticateFirebaseToken, upload.single('ima
   }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// ═══ API: EPOINT PAYMENT ══════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+const crypto = require('crypto');
+
+const EPOINT_PUBLIC_KEY  = process.env.EPOINT_PUBLIC_KEY  || 'i000201384';
+const EPOINT_PRIVATE_KEY = process.env.EPOINT_PRIVATE_KEY || 'pfVkzADrheI8JDf8BkhTvec';
+const EPOINT_SUCCESS_URL = process.env.EPOINT_SUCCESS_URL || 'https://droxstore.onrender.com/payment-success.html';
+const EPOINT_ERROR_URL   = process.env.EPOINT_ERROR_URL   || 'https://droxstore.onrender.com/payment-error.html';
+const EPOINT_CALLBACK    = process.env.EPOINT_CALLBACK    || 'https://droxstore.onrender.com/api/payment/callback';
+
+// ePoint imza oluşturma
+function epointSignature(data) {
+  const str = EPOINT_PRIVATE_KEY + data + EPOINT_PRIVATE_KEY;
+  return crypto.createHash('sha1').update(str).digest('base64');
+}
+
+// Ödeme başlat — sipariş bilgilerini pending olarak kaydet, ePoint'e yönlendir
+app.post('/api/payment/start', checkDb, async (req, res) => {
+  try {
+    const { customerName, phone, address, items, total, appliedDiscountInfo, email } = req.body;
+
+    if (!customerName || !phone || !address || !items || items.length === 0) {
+      return res.status(400).json({ error: 'Eksik sipariş bilgisi.' });
+    }
+
+    // Pending sipariş kaydet
+    const orderRef = db.collection('orders').doc();
+    const orderId  = orderRef.id;
+
+    await orderRef.set({
+      customerName,
+      email: email || null,
+      phone,
+      address,
+      items,
+      total,
+      appliedDiscountInfo: appliedDiscountInfo || '',
+      status: 'Ödeme Bekleniyor',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // ePoint payload
+    const amountAzn = Math.round(parseFloat(total) * 100); // qəpik cinsindən
+    const data = Buffer.from(JSON.stringify({
+      public_key:  EPOINT_PUBLIC_KEY,
+      amount:      amountAzn,
+      currency:    'AZN',
+      order_id:    orderId,
+      description: `DroxStore Sipariş #${orderId.substring(0,8)}`,
+      success_redirect_url: EPOINT_SUCCESS_URL + '?order=' + orderId,
+      error_redirect_url:   EPOINT_ERROR_URL   + '?order=' + orderId,
+      callback_url:         EPOINT_CALLBACK
+    })).toString('base64');
+
+    const signature = epointSignature(data);
+
+    res.json({
+      success: true,
+      orderId,
+      data,
+      signature,
+      epointUrl: 'https://epoint.az/api/1/request'
+    });
+
+  } catch (err) {
+    console.error('ePoint start error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ePoint callback — ödeme sonucu
+app.post('/api/payment/callback', async (req, res) => {
+  try {
+    const { data, signature } = req.body;
+    if (!data || !signature) return res.status(400).send('Bad Request');
+
+    // İmza doğrula
+    const expectedSig = epointSignature(data);
+    if (expectedSig !== signature) {
+      console.warn('ePoint: Geçersiz imza!');
+      return res.status(403).send('Invalid signature');
+    }
+
+    const payload = JSON.parse(Buffer.from(data, 'base64').toString('utf8'));
+    const { order_id, status, transaction } = payload;
+
+    if (!db || !order_id) return res.status(400).send('Bad data');
+
+    const orderRef = db.collection('orders').doc(order_id);
+    const orderDoc = await orderRef.get();
+    if (!orderDoc.exists) return res.status(404).send('Order not found');
+
+    if (status === 'success') {
+      // Stok düş + siparişi onayla
+      const orderData = orderDoc.data();
+      const batch = db.batch();
+
+      for (const item of (orderData.items || [])) {
+        const prodRef = db.collection('products').doc(item.id);
+        const prodDoc = await prodRef.get();
+        if (prodDoc.exists) {
+          let currentStock = prodDoc.data().stock || {};
+          if (item.size && currentStock[item.size] !== undefined) {
+            currentStock[item.size] = Math.max(0, currentStock[item.size] - item.qty);
+            batch.update(prodRef, { stock: currentStock });
+          }
+        }
+      }
+
+      batch.update(orderRef, {
+        status: 'Ödendi',
+        transactionId: transaction || null,
+        paidAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      await batch.commit();
+      console.log(`✅ ePoint ödeme onaylandı: ${order_id}`);
+    } else {
+      await orderRef.update({ status: 'Ödeme Başarısız' });
+      console.log(`❌ ePoint ödeme başarısız: ${order_id} — ${status}`);
+    }
+
+    res.send('OK');
+  } catch (err) {
+    console.error('ePoint callback error:', err);
+    res.status(500).send('Error');
+  }
+});
+
+// Sipariş durumu sorgula (frontend polling için)
+app.get('/api/payment/status/:orderId', checkDb, async (req, res) => {
+  try {
+    const doc = await db.collection('orders').doc(req.params.orderId).get();
+    if (!doc.exists) return res.status(404).json({ error: 'Sipariş bulunamadı' });
+    const { status, transactionId } = doc.data();
+    res.json({ status, transactionId: transactionId || null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Catch-all: SPA fallback ─────────────────────────────────────
 app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

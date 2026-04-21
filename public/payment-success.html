@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ödeme Başarılı — DroxStore</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080808; --accent: #e8ff47; --text: #f0f0f0; --text-dim: #888;
+    --surface: #1c1c1c; --border: rgba(255,255,255,0.08);
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-ui: 'Syne', sans-serif;
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px; padding: 48px 40px; max-width: 480px; width: 100%;
+    text-align: center;
+  }
+  .icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(74, 222, 128, 0.1); border: 2px solid #4ade80;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px; font-size: 36px;
+  }
+  h1 { font-family: var(--font-display); font-size: 48px; letter-spacing: 0.05em; color: #4ade80; margin-bottom: 12px; }
+  p { color: var(--text-dim); font-size: 15px; line-height: 1.6; margin-bottom: 8px; }
+  .order-id { font-family: monospace; background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 8px; font-size: 13px; color: var(--accent); display: inline-block; margin: 16px 0; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--accent); color: #080808;
+    font-family: var(--font-ui); font-size: 13px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 14px 32px; border-radius: 100px;
+    text-decoration: none; margin-top: 24px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(232,255,71,0.25); }
+  .steps { margin: 24px 0; text-align: left; display: flex; flex-direction: column; gap: 10px; }
+  .step { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-dim); }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">✅</div>
+  <h1>ÖDEME BAŞARILI</h1>
+  <p>Siparişiniz başarıyla alındı ve işleme koyuldu.</p>
+  <div class="order-id" id="orderIdDisplay">Sipariş yükleniyor...</div>
+  <div class="steps">
+    <div class="step"><div class="step-dot"></div><span>Ödemeniz ePoint tarafından onaylandı</span></div>
+    <div class="step"><div class="step-dot"></div><span>Siparişiniz hazırlanmaya başlandı</span></div>
+    <div class="step"><div class="step-dot"></div><span>Kargo takip bilgisi e-posta ile gönderilecek</span></div>
+  </div>
+  <p style="font-size:12px; color: #555;">Herhangi bir sorun için destek@droxstore.com adresine yazabilirsiniz.</p>
+  <a href="/" class="btn">Alışverişe Devam Et</a>
+</div>
+
+<script>
+  // Sepeti temizle
+  localStorage.removeItem('drox_cart');
+
+  // Sipariş ID'sini URL'den al
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get('order') || localStorage.getItem('drox_pending_order');
+  const el = document.getElementById('orderIdDisplay');
+
+  if (orderId) {
+    el.textContent = 'Sipariş No: #DX-' + orderId.substring(0, 8).toUpperCase();
+    localStorage.removeItem('drox_pending_order');
+
+    // Sipariş durumunu kontrol et
+    fetch('/api/payment/status/' + orderId)
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'Ödendi') {
+          el.textContent = 'Sipariş No: #DX-' + orderId.substring(0, 8).toUpperCase() + ' ✓';
+        }
+      }).catch(() => {});
+  } else {
+    el.textContent = 'Sipariş kaydedildi';
+  }
+</script>
+</body>
+</html>

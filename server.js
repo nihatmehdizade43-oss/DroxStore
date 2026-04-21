@@ -682,10 +682,9 @@ const EPOINT_SUCCESS_URL = process.env.EPOINT_SUCCESS_URL || 'https://droxstore.
 const EPOINT_ERROR_URL   = process.env.EPOINT_ERROR_URL   || 'https://droxstore.onrender.com/payment-error.html';
 const EPOINT_CALLBACK    = process.env.EPOINT_CALLBACK    || 'https://droxstore.onrender.com/api/payment/callback';
 
-// ePoint imza oluşturma
+// ePoint imza oluşturma — HMAC-SHA1
 function epointSignature(data) {
-  const str = EPOINT_PRIVATE_KEY + data + EPOINT_PRIVATE_KEY;
-  return crypto.createHash('sha1').update(str).digest('base64');
+  return crypto.createHmac('sha1', EPOINT_PRIVATE_KEY).update(data).digest('base64');
 }
 
 // Ödeme başlat — sipariş bilgilerini pending olarak kaydet, ePoint'e yönlendir
@@ -713,20 +712,25 @@ app.post('/api/payment/start', checkDb, async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // ePoint payload
-    const amountAzn = Math.round(parseFloat(total) * 100); // qəpik cinsindən
-    const data = Buffer.from(JSON.stringify({
+    // ePoint payload — TL fiyatı AZN'ye çevir
+    const TL_TO_AZN = parseFloat(process.env.TL_TO_AZN_RATE || '0.054');
+    const amountAzn = (parseFloat(total) * TL_TO_AZN).toFixed(2);
+
+    const payload = {
       public_key:  EPOINT_PUBLIC_KEY,
       amount:      amountAzn,
       currency:    'AZN',
+      language:    'en',
       order_id:    orderId,
-      description: `DroxStore Sipariş #${orderId.substring(0,8)}`,
-      success_redirect_url: EPOINT_SUCCESS_URL + '?order=' + orderId,
-      error_redirect_url:   EPOINT_ERROR_URL   + '?order=' + orderId,
-      callback_url:         EPOINT_CALLBACK
-    })).toString('base64');
+      description: `DroxStore Siparis #${orderId.substring(0,8)}`,
+      success_url: EPOINT_SUCCESS_URL + '?order=' + orderId,
+      error_url:   EPOINT_ERROR_URL   + '?order=' + orderId,
+      result_url:  EPOINT_CALLBACK
+    };
 
-    const signature = epointSignature(data);
+    const payloadJson = JSON.stringify(payload);
+    const data      = Buffer.from(payloadJson).toString('base64');
+    const signature = epointSignature(payloadJson);
 
     res.json({
       success: true,
@@ -748,8 +752,8 @@ app.post('/api/payment/callback', async (req, res) => {
     const { data, signature } = req.body;
     if (!data || !signature) return res.status(400).send('Bad Request');
 
-    // İmza doğrula
-    const expectedSig = epointSignature(data);
+    // İmza doğrula — HMAC-SHA1
+    const expectedSig = epointSignature(Buffer.from(data, 'base64').toString('utf8'));
     if (expectedSig !== signature) {
       console.warn('ePoint: Geçersiz imza!');
       return res.status(403).send('Invalid signature');

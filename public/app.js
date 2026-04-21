@@ -234,7 +234,7 @@ function createProductCard(p, i) {
       </div>
       <div class="prod-info">
         <div class="prod-name">${p.name}</div>
-        <div class="prod-price">$${Number(p.price).toLocaleString('en-US')}</div>
+        <div class="prod-price">₺${Number(p.price).toLocaleString('tr-TR')}</div>
       </div>
     </div>
   `;
@@ -320,7 +320,7 @@ function openModal(id) {
       <div class="modal-details">
         <div class="modal-tag">${stockInfo}</div>
         <h2 class="modal-title">${p.name}</h2>
-        <div class="modal-price">$${Number(p.price).toLocaleString('en-US')}</div>
+        <div class="modal-price">₺${Number(p.price).toLocaleString('tr-TR')}</div>
         <div class="modal-section-label">Açıklama</div>
         <p class="modal-desc">${p.desc || 'Bu ürün detayına henüz bir açıklama girilmemiş.'}</p>
         <div class="size-selection" style="margin-top:10px; display:flex; gap:10px;">Beden: ${sizesHTML}</div>
@@ -512,9 +512,9 @@ function updateCartUI() {
   const tEl = document.getElementById('cartTotal'); 
   if(tEl) {
     if (calc.discountAmount > 0) {
-      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">$${calc.subTotal.toLocaleString('en-US')}</span> <span style="color:#4ade80;">$${calc.finalTotal.toLocaleString('en-US')}</span>`;
+      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">₺${calc.subTotal.toLocaleString('tr-TR')}</span> <span style="color:#4ade80;">₺${calc.finalTotal.toLocaleString('tr-TR')}</span>`;
     } else {
-      tEl.textContent = '$' + calc.subTotal.toLocaleString('en-US');
+      tEl.textContent = '₺' + calc.subTotal.toLocaleString('tr-TR');
     }
   }
 }
@@ -525,7 +525,7 @@ function renderCart() {
   el.innerHTML = cart.map((item, idx) => `
     <div class="cart-item">
       <div class="cart-item-img"><img src="${item.image || ''}"></div>
-      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | $${item.price} x ${item.qty}</span></div>
+      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | ₺${Number(item.price).toLocaleString('tr-TR')} x ${item.qty}</span></div>
       <button class="cart-item-remove" onclick="removeFromCart(${idx})">✕</button>
     </div>
   `).join('');
@@ -572,13 +572,13 @@ function calculateCartTotals() {
 function refreshCheckoutTotal() {
   const calc = calculateCartTotals();
   const tEl = document.getElementById('chkBtnTotal');
-  if(tEl) tEl.textContent = calc.finalTotal.toLocaleString('en-US');
+  if(tEl) tEl.textContent = '₺' + calc.finalTotal.toLocaleString('tr-TR');
   
   const sumEl = document.getElementById('discountSummary');
   if(sumEl) {
     if(calc.discountAmount > 0) {
       sumEl.style.display = 'block';
-      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: $${calc.discountAmount.toLocaleString('en-US')}</strong>`;
+      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: ₺${calc.discountAmount.toLocaleString('tr-TR')}</strong>`;
     } else {
       sumEl.style.display = 'none';
       document.getElementById('promoMessage').style.display = 'none';
@@ -710,7 +710,7 @@ async function processCheckout() {
   } catch (err) {
     showToast('Ödeme başlatılamadı: ' + err.message);
     btn.disabled = false;
-    btn.innerHTML = `Siparişi Onayla · <span id="chkBtnTotal">${total.toLocaleString('en-US')}</span>`;
+    btn.innerHTML = `<span>🔒 ePoint ile Öde</span> <span style="opacity:0.7;">·</span> <span id="chkBtnTotal">₺${total.toLocaleString('tr-TR')}</span>`;
   }
 }
 
@@ -996,7 +996,7 @@ async function refreshAdminPanel() {
     if(statTotal) statTotal.textContent = stats.totalProducts;
     if(statUsers) statUsers.textContent = stats.totalUsers || 0;
     if(statSales) statSales.textContent = stats.totalSales || 0;
-    if(statRevenue) statRevenue.textContent = (stats.totalRevenue || 0).toLocaleString('en-US') + '$';
+    if(statRevenue) statRevenue.textContent = '₺' + (stats.totalRevenue || 0).toLocaleString('tr-TR');
     
     // Product List
     const pList = document.getElementById('adminProductList');

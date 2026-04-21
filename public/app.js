@@ -1596,3 +1596,51 @@ function calculateSize() {
   resultDiv.style.fontSize = '32px';
   resultDiv.innerHTML = 'Önerilen Beden: <span style="color:#4ade80;">' + size + '</span><div style="font-size:11px; color:#aaa; margin-top:10px;">(Regular Fit kalıp baz alınmıştır. Oversize duruş isterseniz bir beden büyük tercih edebilirsiniz.)</div>';
 }
+
+
+// ─── MOBİL DOKUNMA OPTİMİZASYONLARI ─────────────────────────────
+(function initMobileTouch() {
+  // Mobil cihazda cursor'ı gizle
+  if ('ontouchstart' in window) {
+    document.body.style.cursor = 'auto';
+    const c = document.getElementById('cursor');
+    const cf = document.getElementById('cursorFollower');
+    if (c) c.style.display = 'none';
+    if (cf) cf.style.display = 'none';
+  }
+
+  // Ürün kartlarına dokunulduğunda overlay göster (hover yok mobilde)
+  document.addEventListener('touchstart', function(e) {
+    const card = e.target.closest('.product-card');
+    if (card) {
+      // Diğer kartların overlay'ini kapat
+      document.querySelectorAll('.product-card.touch-active').forEach(c => {
+        if (c !== card) c.classList.remove('touch-active');
+      });
+    }
+  }, { passive: true });
+
+  // Modal'ı aşağı kaydırarak kapat (swipe down)
+  let touchStartY = 0;
+  document.addEventListener('touchstart', function(e) {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    const modal = document.getElementById('modalOverlay');
+    const checkout = document.getElementById('checkoutOverlay');
+    const swipeDown = e.changedTouches[0].clientY - touchStartY > 80;
+
+    if (swipeDown) {
+      if (modal && modal.classList.contains('open')) closeModal();
+      if (checkout && checkout.classList.contains('open')) closeCheckout();
+    }
+  }, { passive: true });
+
+  // Input zoom önleme — iOS 16px altı font zoom yapar
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    if (parseFloat(getComputedStyle(el).fontSize) < 16) {
+      el.style.fontSize = '16px';
+    }
+  });
+})();

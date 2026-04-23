@@ -1,14 +1,14 @@
 [
   {
-    "id": "premium-hoodie-001",
-    "name": "Drox Elite Heavyweight Hoodie",
+    "id": "elite-hoodie-001",
+    "name": "Drox Basic Hoodie",
     "category": "hoodie",
-    "price": 85,
-    "oldPrice": 120,
+    "price": 28.50,
+    "oldPrice": 35.00,
     "badge": "YENİ",
     "badgeClass": "",
     "stock": { "S": 10, "M": 15, "L": 8, "XL": 5 },
-    "desc": "500 GSM fırçalanmış pamuklu kumaş. Oversize kesim ve premium nakış detayları ile DroxStore'un imza parçası.",
+    "desc": "Yumuşak pamuklu kumaş, günlük kullanım için ideal oversize kesim.",
     "images": [
       "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800"
     ],
@@ -17,14 +17,14 @@
   },
   {
     "id": "graphic-tee-002",
-    "name": "Cyberpunk Graphic T-Shirt",
+    "name": "Urban Graphic T-Shirt",
     "category": "tshirt",
-    "price": 45,
-    "oldPrice": null,
+    "price": 18.00,
+    "oldPrice": 22.00,
     "badge": "TREND",
     "badgeClass": "purple",
     "stock": { "S": 20, "M": 25, "L": 20, "XL": 10 },
-    "desc": "Yüksek kaliteli dijital baskı, %100 organik pamuk. Modern sokak modası estetiği ile tasarlandı.",
+    "desc": "%100 pamuk, nefes alan kumaş yapısı.",
     "images": [
       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800"
     ],
@@ -32,31 +32,31 @@
     "createdAt": "2026-04-22T10:00:00.000Z"
   },
   {
-    "id": "cargo-pants-003",
-    "name": "Urban Stealth Cargo Pants",
+    "id": "cargo-shorts-003",
+    "name": "Urban Summer Shorts",
     "category": "pantolon",
-    "price": 95,
-    "oldPrice": 110,
-    "badge": "SINIRLI",
+    "price": 24.50,
+    "oldPrice": null,
+    "badge": "YAZ",
     "badgeClass": "red",
     "stock": { "S": 5, "M": 10, "L": 5, "XL": 0 },
-    "desc": "Su itici kumaş teknolojisi, çoklu fonksiyonel cepler. Hem stil hem de konfor bir arada.",
+    "desc": "Hafif kumaş, fonksiyonel cepler.",
     "images": [
-      "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&q=80&w=800"
+      "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&q=80&w=800"
     ],
     "isFeatured": false,
     "createdAt": "2026-04-21T08:00:00.000Z"
   },
   {
     "id": "beanie-004",
-    "name": "Drox Wool Beanie",
+    "name": "Drox Street Beanie",
     "category": "aksesuar",
-    "price": 25,
-    "oldPrice": null,
+    "price": 12.00,
+    "oldPrice": 15.00,
     "badge": null,
     "badgeClass": "",
     "stock": { "S": 50, "M": 50, "L": 50, "XL": 50 },
-    "desc": "Yumuşak yün karışımlı kumaş. Kış aylarının vazgeçilmezi premium bere.",
+    "desc": "Stilinizi tamamlayacak modern bere.",
     "images": [
       "https://images.unsplash.com/photo-1576871337622-98d48d510e10?auto=format&fit=crop&q=80&w=800"
     ],
@@ -64,17 +64,17 @@
     "createdAt": "2026-04-20T15:00:00.000Z"
   },
   {
-    "id": "varsity-jacket-005",
-    "name": "Legacy Varsity Jacket",
-    "category": "ceket",
-    "price": 145,
-    "oldPrice": 180,
-    "badge": "PREMIUM",
+    "id": "cap-005",
+    "name": "Drox Logo Cap",
+    "category": "aksesuar",
+    "price": 15.50,
+    "oldPrice": null,
+    "badge": "POPÜLER",
     "badgeClass": "",
-    "stock": { "S": 2, "M": 5, "L": 3, "XL": 1 },
-    "desc": "Deri kollar, yün gövde. Klasik kolej ceketi tarzının modern yorumu.",
+    "stock": { "S": 30, "M": 30, "L": 30, "XL": 30 },
+    "desc": "Ayarlanabilir askı, nakışlı logo.",
     "images": [
-      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=800"
+      "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=800"
     ],
     "isFeatured": true,
     "createdAt": "2026-04-19T11:00:00.000Z"

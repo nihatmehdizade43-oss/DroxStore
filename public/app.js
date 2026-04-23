@@ -128,7 +128,7 @@ function initSearch() {
           <img src="${p.images?.[0] || ''}" alt="${p.name}">
           <div class="search-item-info">
             <div class="search-item-name">${p.name}</div>
-            <div class="search-item-price">$${Number(p.price).toLocaleString()}</div>
+            <div class="search-item-price">${Number(p.price).toLocaleString()} AZN</div>
           </div>
         </div>
       `).join('');
@@ -341,7 +341,7 @@ function createProductCard(p, i) {
       <div class="prod-info">
         <div class="prod-name">${p.name}</div>
         <div class="prod-meta">
-          <div class="prod-price">$${Number(p.price).toLocaleString()}</div>
+          <div class="prod-price">${Number(p.price).toLocaleString()} AZN</div>
         </div>
       </div>
     </div>
@@ -438,7 +438,7 @@ function openModal(id) {
       <div class="modal-details">
         <div class="modal-tag">${stockInfo}</div>
         <h2 class="modal-title">${p.name}</h2>
-        <div class="modal-price">$${Number(p.price).toLocaleString('en-US')}</div>
+        <div class="modal-price">${Number(p.price).toLocaleString()} AZN</div>
         <div class="modal-section-label">Açıklama</div>
         <p class="modal-desc">${p.desc || 'Bu ürün detayına henüz bir açıklama girilmemiş.'}</p>
         <div class="size-selection" style="margin-top:10px; display:flex; gap:10px;">Beden: ${sizesHTML}</div>
@@ -649,9 +649,9 @@ function updateCartUI() {
   const tEl = document.getElementById('cartTotal'); 
   if(tEl) {
     if (calc.discountAmount > 0) {
-      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">$${calc.subTotal.toLocaleString('en-US')}</span> <span style="color:#4ade80;">$${calc.finalTotal.toLocaleString('en-US')}</span>`;
+      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">${calc.subTotal.toLocaleString()} AZN</span> <span style="color:#4ade80;">${calc.finalTotal.toLocaleString()} AZN</span>`;
     } else {
-      tEl.textContent = '$' + calc.subTotal.toLocaleString('en-US');
+      tEl.textContent = calc.subTotal.toLocaleString() + ' AZN';
     }
   }
 }
@@ -662,7 +662,7 @@ function renderCart() {
   el.innerHTML = cart.map((item, idx) => `
     <div class="cart-item">
       <div class="cart-item-img"><img src="${item.image || ''}"></div>
-      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | $${Number(item.price).toLocaleString('en-US')} x ${item.qty}</span></div>
+      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | ${Number(item.price).toLocaleString()} AZN x ${item.qty}</span></div>
       <button class="cart-item-remove" onclick="removeFromCart(${idx})">✕</button>
     </div>
   `).join('');
@@ -709,13 +709,13 @@ function calculateCartTotals() {
 function refreshCheckoutTotal() {
   const calc = calculateCartTotals();
   const tEl = document.getElementById('chkBtnTotal');
-  if(tEl) tEl.textContent = '$' + calc.finalTotal.toLocaleString('en-US');
+  if(tEl) tEl.textContent = calc.finalTotal.toLocaleString() + ' AZN';
   
   const sumEl = document.getElementById('discountSummary');
   if(sumEl) {
     if(calc.discountAmount > 0) {
       sumEl.style.display = 'block';
-      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: $${calc.discountAmount.toLocaleString('en-US')}</strong>`;
+      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: ${calc.discountAmount.toLocaleString()} AZN</strong>`;
     } else {
       sumEl.style.display = 'none';
       document.getElementById('promoMessage').style.display = 'none';

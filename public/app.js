@@ -15,7 +15,7 @@ let customerData = JSON.parse(localStorage.getItem('drox_cust_data') || 'null');
 let selectedFiles = [];
 let allDiscounts = [];
 let activeAppliedDiscount = null;
-let globalSettings = { vipThreshold: 20000, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8 };
+let globalSettings = { vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8 };
 
 // FIREBASE FRONTEND CONFIG
 const pbConfig = {
@@ -98,9 +98,95 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCart();
   initModal();
   initLanguageMenu();
+  initSearch();
+  initReveal();
   updateCartUI();
   await refreshAllData();
 });
+
+function initSearch() {
+  const searchInput = document.getElementById('searchInput');
+  const searchResults = document.getElementById('searchResults');
+  
+  if (!searchInput || !searchResults) return;
+
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (query.length < 2) {
+      searchResults.classList.remove('active');
+      return;
+    }
+
+    const filtered = allProducts.filter(p => 
+      p.name.toLowerCase().includes(query) || 
+      p.category.toLowerCase().includes(query)
+    ).slice(0, 5);
+
+    if (filtered.length > 0) {
+      searchResults.innerHTML = filtered.map(p => `
+        <div class="search-item" onclick="openModal('${p.id}')">
+          <img src="${p.images?.[0] || ''}" alt="${p.name}">
+          <div class="search-item-info">
+            <div class="search-item-name">${p.name}</div>
+            <div class="search-item-price">$${Number(p.price).toLocaleString()}</div>
+          </div>
+        </div>
+      `).join('');
+      searchResults.classList.add('active');
+    } else {
+      searchResults.innerHTML = '<div class="search-item">Sonuç bulunamadı.</div>';
+      searchResults.classList.add('active');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) {
+      searchResults.classList.remove('active');
+    }
+  });
+}
+
+function initReveal() {
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  // Initial reveal for hero lines
+  setTimeout(() => {
+    document.querySelectorAll('.hero-title .line').forEach((line, i) => {
+      setTimeout(() => line.style.opacity = "1", i * 200);
+      setTimeout(() => line.style.transform = "translateY(0)", i * 200);
+    });
+  }, 500);
+
+  // Observe other sections
+  document.querySelectorAll('section, .product-card, .cat-card').forEach(el => {
+    el.style.opacity = "0";
+    el.style.transform = "translateY(30px)";
+    el.style.transition = "all 0.8s cubic-bezier(0.19, 1, 0.22, 1)";
+    observer.observe(el);
+  });
+}
+
+// Add CSS for revealed state if not already in CSS
+const style = document.createElement('style');
+style.textContent = `
+  .revealed {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+`;
+document.head.appendChild(style);
 
 function initLanguageMenu() {
   const cookieMatch = document.cookie.match(/googtrans=\/tr\/([a-zA-Z-]+)/);
@@ -206,6 +292,24 @@ function renderProducts(filter) {
   }
   document.getElementById('emptyStore').style.display = 'none';
   grid.innerHTML = filtered.map((p, i) => createProductCard(p, i)).join('');
+
+  // Re-observe new product cards
+  document.querySelectorAll('.product-card').forEach(el => {
+    if (!el.classList.contains('revealed')) {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(30px)";
+      el.style.transition = "all 0.8s cubic-bezier(0.19, 1, 0.22, 1)";
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      observer.observe(el);
+    }
+  });
 }
 
 function renderTopDrops() {
@@ -221,20 +325,24 @@ function renderTopDrops() {
 
 function createProductCard(p, i) {
   const mainImage = p.images && p.images.length > 0 ? p.images[0] : '';
+  const badgeHtml = p.badge ? `<span class="prod-badge ${p.badgeClass || ''}">${p.badge}</span>` : '';
+  
   return `
-    <div class="product-card" data-id="${p.id}" style="animation-delay:${i * 0.05}s" onclick="openModal('${p.id}')">
+    <div class="product-card" data-id="${p.id}" onclick="openModal('${p.id}')">
       <div class="prod-img-wrap">
         <div class="prod-img-bg">
           <img src="${mainImage}" alt="${p.name}" class="prod-real-img" loading="lazy">
         </div>
-        ${p.badge ? `<span class="prod-badge ${p.badgeClass}">${p.badge}</span>` : ''}
+        ${badgeHtml}
         <div class="prod-overlay">
           <button class="overlay-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">Hızlı Ekle</button>
         </div>
       </div>
       <div class="prod-info">
         <div class="prod-name">${p.name}</div>
-        <div class="prod-price">₺${Number(p.price).toLocaleString('tr-TR')}</div>
+        <div class="prod-meta">
+          <div class="prod-price">$${Number(p.price).toLocaleString()}</div>
+        </div>
       </div>
     </div>
   `;
@@ -287,6 +395,16 @@ function initModal() {
   const mo = document.getElementById('modalOverlay');
   mo?.addEventListener('click', e => { if (e.target === mo) closeModal(); });
   document.getElementById('modalClose')?.addEventListener('click', closeModal);
+  
+  // Also handle Esc key to close all modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      closeCart();
+      closeUserDrawer();
+      closeCheckout();
+    }
+  });
 }
 
 function openModal(id) {
@@ -320,7 +438,7 @@ function openModal(id) {
       <div class="modal-details">
         <div class="modal-tag">${stockInfo}</div>
         <h2 class="modal-title">${p.name}</h2>
-        <div class="modal-price">₺${Number(p.price).toLocaleString('tr-TR')}</div>
+        <div class="modal-price">$${Number(p.price).toLocaleString('en-US')}</div>
         <div class="modal-section-label">Açıklama</div>
         <p class="modal-desc">${p.desc || 'Bu ürün detayına henüz bir açıklama girilmemiş.'}</p>
         <div class="size-selection" style="margin-top:10px; display:flex; gap:10px;">Beden: ${sizesHTML}</div>
@@ -391,7 +509,7 @@ function renderReviews(productId, reviews) {
   } else {
     let listHtml = reviews.map(r => {
        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-       const dateStr = new Date(r.timeMs).toLocaleDateString('tr-TR');
+       const dateStr = new Date(r.timeMs).toLocaleDateString('en-US');
        const defaultAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="%23888" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
        return `
          <div class="review-card">
@@ -459,6 +577,23 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
+function closeCheckout() {
+  document.getElementById('checkoutOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeCart() {
+  document.getElementById('cartDrawer').classList.remove('open');
+  document.getElementById('cartOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeUserDrawer() {
+  document.getElementById('userDrawer')?.classList.remove('open');
+  document.getElementById('userOverlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 // ─── CART & CHECKOUT ─────────────────────────────────────────────
 function initCart() {
   document.getElementById('cartBtn')?.addEventListener('click', openCart);
@@ -468,11 +603,13 @@ function initCart() {
 function openCart() {
   document.getElementById('cartDrawer').classList.add('open');
   document.getElementById('cartOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
   renderCart();
 }
 function closeCart() {
   document.getElementById('cartDrawer').classList.remove('open');
   document.getElementById('cartOverlay').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 function addToCart(p, size='M', qty=1) {
@@ -494,8 +631,8 @@ function quickAdd(id) {
 function addFromModal() {
   if (!currentProduct) return;
   const sizeInput = document.querySelector('input[name="prodSize"]:checked');
-  if (!sizeInput) return showToast('Lütfen önce beden seçin!');
-  addToCart(currentProduct, sizeInput.value);
+  const size = sizeInput ? sizeInput.value : 'M';
+  addToCart(currentProduct, size);
   closeModal();
 }
 
@@ -512,9 +649,9 @@ function updateCartUI() {
   const tEl = document.getElementById('cartTotal'); 
   if(tEl) {
     if (calc.discountAmount > 0) {
-      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">₺${calc.subTotal.toLocaleString('tr-TR')}</span> <span style="color:#4ade80;">₺${calc.finalTotal.toLocaleString('tr-TR')}</span>`;
+      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">$${calc.subTotal.toLocaleString('en-US')}</span> <span style="color:#4ade80;">$${calc.finalTotal.toLocaleString('en-US')}</span>`;
     } else {
-      tEl.textContent = '₺' + calc.subTotal.toLocaleString('tr-TR');
+      tEl.textContent = '$' + calc.subTotal.toLocaleString('en-US');
     }
   }
 }
@@ -525,7 +662,7 @@ function renderCart() {
   el.innerHTML = cart.map((item, idx) => `
     <div class="cart-item">
       <div class="cart-item-img"><img src="${item.image || ''}"></div>
-      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | ₺${Number(item.price).toLocaleString('tr-TR')} x ${item.qty}</span></div>
+      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | $${Number(item.price).toLocaleString('en-US')} x ${item.qty}</span></div>
       <button class="cart-item-remove" onclick="removeFromCart(${idx})">✕</button>
     </div>
   `).join('');
@@ -572,13 +709,13 @@ function calculateCartTotals() {
 function refreshCheckoutTotal() {
   const calc = calculateCartTotals();
   const tEl = document.getElementById('chkBtnTotal');
-  if(tEl) tEl.textContent = '₺' + calc.finalTotal.toLocaleString('tr-TR');
+  if(tEl) tEl.textContent = '$' + calc.finalTotal.toLocaleString('en-US');
   
   const sumEl = document.getElementById('discountSummary');
   if(sumEl) {
     if(calc.discountAmount > 0) {
       sumEl.style.display = 'block';
-      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: ₺${calc.discountAmount.toLocaleString('tr-TR')}</strong>`;
+      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: $${calc.discountAmount.toLocaleString('en-US')}</strong>`;
     } else {
       sumEl.style.display = 'none';
       document.getElementById('promoMessage').style.display = 'none';
@@ -673,10 +810,10 @@ async function processCheckout() {
 
   const btn = document.getElementById('chkSubmitBtn');
   btn.disabled  = true;
-  btn.textContent = 'ePoint\'e Yönlendiriliyor...';
+  btn.textContent = 'Payriff\'e Yönlendiriliyor...';
 
   try {
-    // Backend'e pending sipariş oluştur + ePoint parametrelerini al
+    // Backend'e pending sipariş oluştur + Payriff parametrelerini al
     const result = await API.authAction('/api/payment/start', 'POST', {
       customerName: nameStr,
       phone,
@@ -690,39 +827,31 @@ async function processCheckout() {
     // Sepeti localStorage'a yedekle (success sayfasında temizlemek için)
     localStorage.setItem('drox_pending_order', result.orderId);
 
-    // ePoint ödeme sayfasına POST ile yönlendir
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = result.epointUrl;
-    form.style.display = 'none';
-
-    [['data', result.data], ['signature', result.signature]].forEach(([name, value]) => {
-      const input = document.createElement('input');
-      input.type  = 'hidden';
-      input.name  = name;
-      input.value = value;
-      form.appendChild(input);
-    });
-
-    document.body.appendChild(form);
-    form.submit();
+    // Payriff ödeme sayfasına yönlendir
+    if (result.success && result.paymentUrl) {
+      window.location.href = result.paymentUrl;
+    } else {
+      throw new Error(result.error || 'Ödeme başlatılamadı');
+    }
 
   } catch (err) {
     showToast('Ödeme başlatılamadı: ' + err.message);
     btn.disabled = false;
-    btn.innerHTML = `<span>🔒 ePoint ile Öde</span> <span style="opacity:0.7;">·</span> <span id="chkBtnTotal">₺${total.toLocaleString('tr-TR')}</span>`;
+    btn.innerHTML = `<span>Payriff ile Öde</span> <span style="opacity:0.7;">·</span> <span id="chkBtnTotal">$${total.toLocaleString('en-US')}</span>`;
   }
 }
 
 // ─── CUSTOMER AUTH & UI ──────────────────────────────────────────
 function openUserDrawer() {
-  document.getElementById('userOverlay').classList.add('open');
-  document.getElementById('userDrawer').classList.add('open');
-  refreshUserUI();
+  document.getElementById('userDrawer')?.classList.add('open');
+  document.getElementById('userOverlay')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderUserContent();
 }
 function closeUserDrawer() {
-  document.getElementById('userOverlay').classList.remove('open');
-  document.getElementById('userDrawer').classList.remove('open');
+  document.getElementById('userDrawer')?.classList.remove('open');
+  document.getElementById('userOverlay')?.classList.remove('open');
+  document.body.style.overflow = '';
 }
 document.getElementById('userOverlay')?.addEventListener('click', closeUserDrawer);
 
@@ -981,7 +1110,7 @@ function openAdminLogin() {
   document.getElementById('adminLoginOverlay').classList.add('open');
 }
 function closeAdminLogin() {
-  document.getElementById('adminLoginOverlay').classList.remove('open');
+  document.getElementById('adminLoginOverlay')?.classList.remove('open');
 }
 
 // ─── ADMIN: DASHBOARD / ORDERS ───────────────────────────────────
@@ -996,7 +1125,7 @@ async function refreshAdminPanel() {
     if(statTotal) statTotal.textContent = stats.totalProducts;
     if(statUsers) statUsers.textContent = stats.totalUsers || 0;
     if(statSales) statSales.textContent = stats.totalSales || 0;
-    if(statRevenue) statRevenue.textContent = '₺' + (stats.totalRevenue || 0).toLocaleString('tr-TR');
+    if(statRevenue) statRevenue.textContent = '$' + (stats.totalRevenue || 0).toLocaleString('en-US');
     
     // Product List
     const pList = document.getElementById('adminProductList');
@@ -1046,7 +1175,7 @@ async function refreshAdminPanel() {
     if(dList) {
       if(allDiscounts.length === 0) dList.innerHTML = "Aktif kupon yok.";
       else dList.innerHTML = allDiscounts.map(d => {
-        const untilTxt = d.validUntil ? new Date(d.validUntil).toLocaleDateString('tr') + ' Bitiş' : 'Süresiz';
+        const untilTxt = d.validUntil ? new Date(d.validUntil).toLocaleDateString('en-US') + ' Bitiş' : 'Süresiz';
         return `
         <div class="cat-item">
           <span><strong>${d.code}</strong> - %${d.percent} (${untilTxt})</span>
@@ -1058,12 +1187,12 @@ async function refreshAdminPanel() {
     // System Settings Populate
     const st = globalSettings;
     if(document.getElementById('set_vipThreshold')) {
-      document.getElementById('set_vipThreshold').value = st.vipThreshold || 20000;
+      document.getElementById('set_vipThreshold').value = st.vipThreshold || 500;
       document.getElementById('set_qtyTarget').value = st.qtyDiscountTarget || 3;
       document.getElementById('set_qtyPercent').value = st.qtyDiscountPercent || 10;
       document.getElementById('set_datePercent').value = st.dateDiscountPercent || 8;
       document.getElementById('set_printfulToken').value = st.printfulToken || '';
-      document.getElementById('set_usdRate').value = st.usdToTlRate || 33.0;
+      document.getElementById('set_usdRate').value = st.usdToTlRate || 1.0;
       document.getElementById('set_printfulMargin').value = st.printfulMargin || 50;
     }
 
@@ -1285,10 +1414,12 @@ async function deleteDiscount(id) {
 }
 
 function openPromotions() {
-  document.getElementById('promotionsOverlay').classList.add('open');
+  document.getElementById('promotionsOverlay')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 function closePromotions() {
-  document.getElementById('promotionsOverlay').classList.remove('open');
+  document.getElementById('promotionsOverlay')?.classList.remove('open');
+  document.body.style.overflow = '';
 }
 function renderPublicDiscounts() {
   const el = document.getElementById('publicDiscountsList');
@@ -1315,8 +1446,14 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
-function openLookbook() { document.getElementById('lookbookOverlay').classList.add('open'); document.body.style.overflow='hidden'; }
-function closeLookbook() { document.getElementById('lookbookOverlay').classList.remove('open'); document.body.style.overflow=''; }
+function openLookbook() { 
+  document.getElementById('lookbookOverlay')?.classList.add('open'); 
+  document.body.style.overflow='hidden'; 
+}
+function closeLookbook() { 
+  document.getElementById('lookbookOverlay')?.classList.remove('open'); 
+  document.body.style.overflow=''; 
+}
 
 // --- AI SUPPORT SYSTEM & GEO LOCATION ---
 function sendAiMessage() {

@@ -37,9 +37,29 @@ let db = null;
 try {
   let serviceAccount;
   
-  // Bütün dertleri bitiren kurtarıcı Base64 Şifre (Sizin için özel ayarlandı, Render UI hatalarını bypass eder)
-  const b64Key = "ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAiZHJveHN0b3JlLWM1YzU4IiwKICAicHJpdmF0ZV9rZXlfaWQiOiAiMjUzZGYxYjFhODYzN2QzMWQzMWRiYTdlYmM0ZjVkZWUwNzkyYTBkZSIsCiAgInByaXZhdGVfa2V5IjogIi0tLS0tQkVHSU4gUFJJVkFURSBLRVktLS0tLVxuTUlJRXZRSUJBREFOQmdrcWhraUc5dzBCQVFFRkFBU0NCS2N3Z2dTakFnRUFBb0lCQVFEU2FHR2Z5YzhhRlZCbFxucFJjQTJDb2MrdkxSaVBUa1ZSQXg3UFBHcC84bmFSNmYwTFpEZHNOWFVHZ01GSE1qdmo0L3N4Sk1zTXRrc0tyMFxuZVl4QnR2RVFtZWM5b0ZERllGREU2eGcyaHNQSlVtVzQ4aEFDMlY4a1FJcHZERVZZWDNncnJqeVByS2xyTXMrMlxuKzd3Q3BpTzdyYVk4RTFxQUhtMDFFZS9WbC8wbG03NE1DUUJTYUhtd1RSTXFsK2M4SmhwMGFjcXdaeFk1bkVxQVxueDBJdCs2ZU5UVENFck5uT01QSzZoUUNhK2dLQzVXRnF1NWYzUTg4enJMMXg2VVMyUmV1RTh5MnBSbkw2QW5BdFxuVHJteVhMZzNwaVpqVGY3T1RxU1Q0MmhTQWxURnRmRlpnZnYzZHNNMHpaZiszRGJ0blNCOEdib3NqVkY0WDNSWVxuZmpYK0RKdDFBZ01CQUFFQ2dnRUFQLzdKZW8wcDlYZjRIUUpLYmRKUmRNRUs2NW9wU2UxcFlKWCtTelM3a1dRU1xua1c4c2tIWmwwWCsrTmJaZWtzZUJMV1Nzc3pDdW5EQnp2cW5kYy90TmRNd3FuZjdOc2txcUprcU84YjZwZStrWVxuMFZpbWNBZG5QYUozdUhEV0Fwdis4K0lwdjFVM3JrZ2xEeldmcUhxWnNiS09OZ1Y0NkREWTdHUkpPd0RnV1BocFxuWGJrNkJ3TW1QWEx6Vkw0RjZIVm05dDRrRW9aM3B0UUJJTHVTdGxva2FjbnlsQTFHOTluNHNzTWp1d2dVcXFaaFxubG1VTzRNNWxHaVhLRytQMG11Q1FPTGhLY25PSW5pR0trVzFwcGs3M2tIU3dDWjhQNWhZaVJUc0dDdFV4VzYxaFxuUTVvNUJjVzc1dE84NnJiaEJkcUFUK0VoZ0p6akVJMTI4ZzdESWhKTy9RS0JnUUR3eDZMY1gxa3hmVmliczgvTFxuZHlXL1ViSXJuVnkwQWtxbkxzdExRY01NUFJCZnYydFgvTUI0TlhRekd6L3h0cm9aSjBYTTBsQW0xWVd5Q1RvblxuU2F6M2xkblR1dnk1Tm9PelBJMkdnODZTblNVMnZNWFU1VkxleVV0ODZ3RWtmOEhkRnpMSFhMNjBJVFlnYjJVUlxuS0VaMER4UXd0UVJTUW5vbmx5bk5wNElZdXdLQmdRRGZ0VUdBb20zTnJvY3dMU0tlSlU2bmpGTDRxKzRKYmJBV1xuRE9TQjZURXBKeFY0L1F3L0w5WWNlVWNmVlIyMzhLc1h6MFlhbDlENFNHKzFCSnhCU0xtSXl6ak5QU0d1SWRaL1xua0dUTEd3YWtTMloxMStMbjVTRlNMOGVrQmM0ODR3T2V0UUVTeHFIbFlZQ0lYYm9kVEVLNTUvbWRIcnZGQUJPZVxuUTE1OHBSOHhqd0tCZ0diQXkzL0FNUkF0cmVMRW1hajY3K0QxdkZOZ2xHODlpeDVObWZSRDNEa2MxaUFHVUlqOFxuRkNjNHFKNG13dU1rVjhia082VnRHMGQzVjliaW1TNnJBbVdtVFk5Ti9Rd05kNmJGOEorM0lERHhYekE4M3pBN1xucldIbUJaRUp1VE1hVW1GSHhTUFBNSk11bVNxK1h5TXpUTjI2a2FNM25PQjkvaU5uSHkva2pHQ0JBb0dBT0FkUFxubG9ZWDlqSEdEaHpmMUxnSFVSTm1ISDRES2oxY29za3IyaFdyaUdFUGtiUGZBMXhaeGR2aUlralJIcWFhVTJaSVxuYXBTbmMrZkFncGZiQXNiU0lSNjA1VUp3VXdxS2pIeC9vaGJzdk8xZGhocEI3RTZJMytxemw3TVVpazlaTXNDbVxudWlzaGxTK3NYM3NLQ0JoM2hkUkJ3a1pXUk9yVi93ZGtmTmRtVHFVQ2dZRUFxMVUrOWNiZkNqS3ZubGJTdmZkUFxudmFTT0Z5YlZqckFsRFo4dUZpbHVtSTlGdjdBeHAvQlRvTVNJWlBGVVFxOVJaTU41TDgxekw3YkhsUWw1YjRzTVxuVkl5YmY0VngraklIVnYxeGd4dEV4V05TRGpTdHFWaU83ZWxPcitEbGVvd01odmRkbGkzb2ZkK1FqU3luOGtLZlxuTEFxTjZxYUxZeHF3YWY5cTFKaXJQZFk9XG4tLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tXG4iLAogICJjbGllbnRfZW1haWwiOiAiZmlyZWJhc2UtYWRtaW5zZGstZmJzdmNAZHJveHN0b3JlLWM1YzU4LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwKICAiY2xpZW50X2lkIjogIjExMzA4NjMxNjIxMTc0MzQ3MTQ0MSIsCiAgImF1dGhfdXJpIjogImh0dHBzOi8vYWNjb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi9hdXRoIiwKICAidG9rZW5fdXJpIjogImh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwKICAiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjogImh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL29hdXRoMi92MS9jZXJ0cyIsCiAgImNsaWVudF94NTA5X2NlcnRfdXJsIjogImh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL3JvYm90L3YxL21ldGFkYXRhL3g1MDkvZmlyZWJhc2UtYWRtaW5zZGstZmJzdmMlNDBkcm94c3RvcmUtYzVjNTguaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLAogICJ1bml2ZXJzZV9kb21haW4iOiAiZ29vZ2xlYXBpcy5jb20iCn0K";
-  serviceAccount = JSON.parse(Buffer.from(b64Key, 'base64').toString('utf8'));
+  // Firebase Service Account configuration via .env
+  let b64Key = process.env.FIREBASE_SERVICE_ACCOUNT_B64 ? process.env.FIREBASE_SERVICE_ACCOUNT_B64.trim() : null;
+  if (!b64Key) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT_B64 is missing in .env");
+  }
+  // Base64 string içindeki olası boşluk/satır sonlarını temizle
+  b64Key = b64Key.replace(/\s/g, '');
+  
+  try {
+    let decoded = Buffer.from(b64Key, 'base64').toString('utf8');
+    
+    // Literal newline karakterlerini JSON string değerleri içinde kaçış karakterine çevir
+    const fixedDecoded = decoded.replace(/"([^"]*)"/g, (match, p1) => {
+      return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
+    });
+    serviceAccount = JSON.parse(fixedDecoded);
+  } catch (e) {
+    console.error("❌ Firebase JSON parse hatası!");
+    console.error("ℹ️ İPUCU: .env dosyasındaki FIREBASE_SERVICE_ACCOUNT_B64 anahtarı eksik veya hatalı görünüyor.");
+    console.error("ℹ️ ÇÖZÜM: Firebase serviceAccountKey.json dosyanızı base64'e çevirip .env dosyasına tek satır olarak yapıştırın.");
+    console.error("ℹ️ KOMUT: 'node -e \"console.log(require(\'fs\').readFileSync(\'serviceAccountKey.json\').toString(\'base64\'))\"'");
+    throw e;
+  }
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -68,8 +88,8 @@ app.use((req, res, next) => {
 
 // ─── ADMIN AUTH (JWT) ───────────────────────────────────────────
 const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'admin123'; // Admin şifresi sabit kaldı ama tokenla korunacak
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123'; 
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_drox_key_2026_pro';
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -101,7 +121,7 @@ app.post('/api/auth/login', (req, res) => {
 
 // Veritabanı (Firebase) Kapalıyken Çıkacak Hata Yakalayıcı
 function checkDb(req, res, next) {
-  if (!db) return res.status(500).json({ error: 'Firebase veritabanı aktif değil. Sunucu yöneticisine başvurun.' });
+  // DB yoksa hata verme, devam et (endpointler kendi içinde fallback yapacak)
   next();
 }
 
@@ -111,139 +131,84 @@ async function authenticateFirebaseToken(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Yetkilendirme gerekli' });
   try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    req.user = decodedToken;
-    next();
+    if (admin) {
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      req.user = decodedToken;
+      next();
+    } else {
+      res.status(503).json({ error: 'Doğrulama servisi şu an kullanılamıyor' });
+    }
   } catch(err) {
     res.status(403).json({ error: 'Geçersiz müşteri oturumu' });
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: CUSTOMERS (SYNCHRONIZE & PROFILE) ═══════════════════
-// ═══════════════════════════════════════════════════════════════
-app.post('/api/customers/sync', [checkDb, authenticateFirebaseToken], async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const { email, name, photoURL } = req.body;
-    
-    const docRef = db.collection('customers').doc(uid);
-    const doc = await docRef.get();
-    
-    let finalPhotoURL = photoURL || null;
-    let address = {};
+// ─── DATA FALLBACK (Local JSON) ──────────────────────────────────
+const CATEGORIES_PATH = path.join(__dirname, 'data', 'categories.json');
+const PRODUCTS_PATH = path.join(__dirname, 'data', 'products.json');
 
-    // Eğer Fotoğraf URL'si Google/Açık Link ve Cloudinary'de değilse Cloudinary'ye at:
-    if (photoURL && typeof photoURL === 'string' && !photoURL.includes('cloudinary.com')) {
-      try {
-        const uploadRes = await cloudinary.uploader.upload(photoURL, {
-          folder: 'droxstore_customers'
-        });
-        finalPhotoURL = uploadRes.secure_url;
-      } catch(e) {
-        console.warn("Cloudinary Upload Hatası:", e.message);
-      }
+function getLocalData(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      return JSON.parse(fs.readFileSync(filePath, 'utf8'));
     }
+  } catch (e) { console.error(`Local data error (${filePath}):`, e); }
+  return [];
+}
 
-    if (!doc.exists) {
-      await docRef.set({
-        email: email || req.user.email,
-        name: name || req.user.name || 'İsimsiz Üye',
-        photoURL: finalPhotoURL,
-        address: {},
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-    } else {
-      // Zaten var, Sadece adresi ve mevcut fotoyu alalım (eğer boşsa güncelle)
-      const existingData = doc.data();
-      address = existingData.address || {};
-      if (!existingData.photoURL && finalPhotoURL) {
-        await docRef.update({ photoURL: finalPhotoURL, name: name || existingData.name });
-      } else {
-        finalPhotoURL = existingData.photoURL || finalPhotoURL;
-      }
+// ═══════════════════════════════════════════════════════════════
+// ═══ API: SETTINGS & DISCOUNTS ════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/settings', async (req, res) => {
+  try {
+    if (db) {
+      const doc = await db.collection('settings').doc('global').get();
+      if (doc.exists) return res.json(doc.data());
     }
-
-    // VIP Sistem: Kullanıcının toplam sipariş tutarını hesapla
-    let totalSpent = 0;
-    const ordersSnap = await db.collection('orders').where('email', '==', email || req.user.email).get();
-    ordersSnap.forEach(orderDoc => {
-      totalSpent += parseFloat(orderDoc.data().total || 0);
-    });
-
-    res.json({ success: true, user: { uid, email: email || req.user.email, name, photoURL: finalPhotoURL, address, totalSpent } });
-  } catch(err) {
-    res.status(500).json({error: err.message});
+    res.json({ vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8 });
+  } catch (err) {
+    res.json({ vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8 });
   }
 });
 
-app.post('/api/customers/address', [checkDb, authenticateFirebaseToken], async (req, res) => {
+app.get('/api/discounts', async (req, res) => {
   try {
-    const uid = req.user.uid;
-    const { address } = req.body;
-    await db.collection('customers').doc(uid).update({ address });
-    res.json({ success: true, address });
-  } catch(err) {
-    res.status(500).json({error: err.message});
+    if (db) {
+      const snapshot = await db.collection('discounts').get();
+      return res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }
+    res.json([]);
+  } catch (err) {
+    res.json([]);
   }
 });
 
 // ═══════════════════════════════════════════════════════════════
-// ═══ API: CATEGORIES (FIREBASE) ═══════════════════════════════
+// ═══ API: CATEGORIES ══════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
-app.get('/api/categories', checkDb, async (req, res) => {
+app.get('/api/categories', async (req, res) => {
   try {
-    const snapshot = await db.collection('categories').get();
-    const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.json(categories);
+    if (db) {
+      const snapshot = await db.collection('categories').get();
+      const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return res.json(categories);
+    }
+    res.json(getLocalData(CATEGORIES_PATH));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json(getLocalData(CATEGORIES_PATH));
   }
 });
 
-app.post('/api/categories', [checkDb, authenticateToken], async (req, res) => {
+app.get('/api/products', async (req, res) => {
   try {
-    const { name } = req.body;
-    if (!name || name.trim() === '') return res.status(400).json({ error: 'Kategori adı gerekli' });
-
-    const slug = name.toLowerCase().trim()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-
-    // Kategori var mı kontrol et
-    const existing = await db.collection('categories').where('slug', '==', slug).get();
-    if (!existing.empty) return res.status(400).json({ error: 'Bu kategori zaten mevcut' });
-
-    const newCatRef = db.collection('categories').doc();
-    const catData = { name: name.trim(), slug };
-    await newCatRef.set(catData);
-
-    res.status(201).json({ id: newCatRef.id, ...catData });
+    if (db) {
+      const snapshot = await db.collection('products').orderBy('createdAt', 'desc').get();
+      const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return res.json(products);
+    }
+    res.json(getLocalData(PRODUCTS_PATH));
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/api/categories/:id', [checkDb, authenticateToken], async (req, res) => {
-  try {
-    await db.collection('categories').doc(req.params.id).delete();
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: PRODUCTS (FIREBASE + CLOUDINARY) ════════════════════
-// ═══════════════════════════════════════════════════════════════
-app.get('/api/products', checkDb, async (req, res) => {
-  try {
-    const snapshot = await db.collection('products').orderBy('createdAt', 'desc').get();
-    const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json(getLocalData(PRODUCTS_PATH));
   }
 });
 
@@ -526,7 +491,6 @@ app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) =>
     const st = doc.exists ? doc.data() : {};
     
     const pToken = st.printfulToken;
-    const rate = parseFloat(st.usdToTlRate) || 33.0;
     const margin = parseFloat(st.printfulMargin) || 50;
 
     if (!pToken) {
@@ -583,8 +547,8 @@ app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) =>
 
       if(sizes.length === 0) sizes = ["Standart", "S", "M", "L", "XL"];
       
-      // Türkiye Satış Fiyatı Hesaplama: (Printful USD Fiyatı) * KUR * (1 + Kar Marjı)
-      const finalPriceTl = Math.ceil(maxRetailPrice * rate * (1 + (margin / 100)));
+      // Satış Fiyatı Hesaplama: (Printful USD Fiyatı) * (1 + Kar Marjı)
+      const finalPrice = Math.ceil(maxRetailPrice * (1 + (margin / 100)));
 
       // Sonsuz stok yapısı
       const stockData = {};
@@ -593,7 +557,7 @@ app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) =>
       const productData = {
         name: details.sync_product.name,
         desc: 'Printful Özel Tasarım Premium Baskılı Ürün.',
-        price: finalPriceTl,
+        price: finalPrice,
         category: 'Printful Tasarımları',
         sizes: sizes,
         stock: stockData,
@@ -672,22 +636,15 @@ app.post('/api/reviews', [checkDb, authenticateFirebaseToken, upload.single('ima
 });
 
 // ═══════════════════════════════════════════════════════════════
-// ═══ API: EPOINT PAYMENT ══════════════════════════════════════
+// ═══ API: PAYRIFF PAYMENT ═════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
-const crypto = require('crypto');
+const PAYRIFF_API_KEY = process.env.PAYRIFF_API_KEY || 'your_payriff_api_key';
+const PAYRIFF_SECRET_KEY = process.env.PAYRIFF_SECRET_KEY || 'your_payriff_secret_key';
+const PAYRIFF_MERCHANT_ID = process.env.PAYRIFF_MERCHANT_ID || 'your_merchant_id';
+const PAYRIFF_SUCCESS_URL = process.env.PAYRIFF_SUCCESS_URL || 'https://droxstore.onrender.com/payment-success.html';
+const PAYRIFF_ERROR_URL = process.env.PAYRIFF_ERROR_URL || 'https://droxstore.onrender.com/payment-error.html';
 
-const EPOINT_PUBLIC_KEY  = process.env.EPOINT_PUBLIC_KEY  || 'i000201384';
-const EPOINT_PRIVATE_KEY = process.env.EPOINT_PRIVATE_KEY || 'pfVkzADrheI8JDf8BkhTvec';
-const EPOINT_SUCCESS_URL = process.env.EPOINT_SUCCESS_URL || 'https://droxstore.onrender.com/payment-success.html';
-const EPOINT_ERROR_URL   = process.env.EPOINT_ERROR_URL   || 'https://droxstore.onrender.com/payment-error.html';
-const EPOINT_CALLBACK    = process.env.EPOINT_CALLBACK    || 'https://droxstore.onrender.com/api/payment/callback';
-
-// ePoint imza oluşturma — HMAC-SHA1
-function epointSignature(data) {
-  return crypto.createHmac('sha1', EPOINT_PRIVATE_KEY).update(data).digest('base64');
-}
-
-// Ödeme başlat — sipariş bilgilerini pending olarak kaydet, ePoint'e yönlendir
+// Payriff ödeme başlat — sipariş bilgilerini pending olarak kaydet, Payriff'e yönlendir
 app.post('/api/payment/start', checkDb, async (req, res) => {
   try {
     const { customerName, phone, address, items, total, appliedDiscountInfo, email } = req.body;
@@ -712,63 +669,68 @@ app.post('/api/payment/start', checkDb, async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // ePoint payload — TL fiyatı AZN'ye çevir
-    const TL_TO_AZN = parseFloat(process.env.TL_TO_AZN_RATE || '0.054');
-    const amountAzn = (parseFloat(total) * TL_TO_AZN).toFixed(2);
+    // Payriff payload — USD fiyatı AZN'ye çevir
+    const USD_TO_AZN = parseFloat(process.env.USD_TO_AZN_RATE || '1.70');
+    const amountAzn = (parseFloat(total) * USD_TO_AZN).toFixed(2);
 
     const payload = {
-      public_key:  EPOINT_PUBLIC_KEY,
-      amount:      amountAzn,
-      currency:    'AZN',
-      language:    'en',
-      order_id:    orderId,
-      description: `DroxStore Siparis #${orderId.substring(0,8)}`,
-      success_url: EPOINT_SUCCESS_URL + '?order=' + orderId,
-      error_url:   EPOINT_ERROR_URL   + '?order=' + orderId,
-      result_url:  EPOINT_CALLBACK
+      body: {
+        amount: parseFloat(amountAzn),
+        currencyType: 'AZN',
+        description: `DroxStore Siparis #${orderId.substring(0,8)}`,
+        directPay: true,
+        installmentLevel: 0,
+        language: 'EN',
+        merchantId: PAYRIFF_MERCHANT_ID,
+        approveURL: PAYRIFF_SUCCESS_URL + '?order=' + orderId,
+        cancelURL: PAYRIFF_ERROR_URL + '?order=' + orderId,
+        declineURL: PAYRIFF_ERROR_URL + '?order=' + orderId
+      },
+      merchantId: PAYRIFF_MERCHANT_ID
     };
 
-    const payloadJson = JSON.stringify(payload);
-    const data      = Buffer.from(payloadJson).toString('base64');
-    const signature = epointSignature(payloadJson);
-
-    res.json({
-      success: true,
-      orderId,
-      data,
-      signature,
-      epointUrl: 'https://epoint.az/api/1/request'
+    const response = await fetch('https://api.payriff.com/api/v2/createOrder', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': PAYRIFF_API_KEY
+      },
+      body: JSON.stringify(payload)
     });
 
+    const resData = await response.json();
+
+    if (resData.code === '00' && resData.payload && resData.payload.paymentUrl) {
+      res.json({
+        success: true,
+        orderId,
+        paymentUrl: resData.payload.paymentUrl
+      });
+    } else {
+      throw new Error(resData.message || 'Payriff order creation failed');
+    }
+
   } catch (err) {
-    console.error('ePoint start error:', err);
+    console.error('Payriff start error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ePoint callback — ödeme sonucu
+// Payriff callback — ödeme sonucu (Not: Payriff genelde server-to-server callback yapar)
 app.post('/api/payment/callback', async (req, res) => {
   try {
-    const { data, signature } = req.body;
-    if (!data || !signature) return res.status(400).send('Bad Request');
+    // Payriff callback yapısı (örnek: { payload: { orderId, orderStatus, sessionId } })
+    const { payload } = req.body;
+    if (!payload) return res.status(400).send('Bad Request');
 
-    // İmza doğrula — HMAC-SHA1
-    const expectedSig = epointSignature(Buffer.from(data, 'base64').toString('utf8'));
-    if (expectedSig !== signature) {
-      console.warn('ePoint: Geçersiz imza!');
-      return res.status(403).send('Invalid signature');
-    }
+    const { orderId, orderStatus } = payload;
+    if (!db || !orderId) return res.status(400).send('Bad data');
 
-    const payload = JSON.parse(Buffer.from(data, 'base64').toString('utf8'));
-    const { order_id, status, transaction } = payload;
-
-    if (!db || !order_id) return res.status(400).send('Bad data');
-
-    const orderRef = db.collection('orders').doc(order_id);
+    const orderRef = db.collection('orders').doc(orderId);
     const orderDoc = await orderRef.get();
     if (!orderDoc.exists) return res.status(404).send('Order not found');
 
-    if (status === 'success') {
+    if (orderStatus === 'APPROVED') {
       // Stok düş + siparişi onayla
       const orderData = orderDoc.data();
       const batch = db.batch();
@@ -787,20 +749,19 @@ app.post('/api/payment/callback', async (req, res) => {
 
       batch.update(orderRef, {
         status: 'Ödendi',
-        transactionId: transaction || null,
         paidAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
       await batch.commit();
-      console.log(`✅ ePoint ödeme onaylandı: ${order_id}`);
+      console.log(`✅ Payriff ödeme onaylandı: ${orderId}`);
     } else {
       await orderRef.update({ status: 'Ödeme Başarısız' });
-      console.log(`❌ ePoint ödeme başarısız: ${order_id} — ${status}`);
+      console.log(`❌ Payriff ödeme başarısız: ${orderId} — ${orderStatus}`);
     }
 
     res.send('OK');
   } catch (err) {
-    console.error('ePoint callback error:', err);
+    console.error('Payriff callback error:', err);
     res.status(500).send('Error');
   }
 });

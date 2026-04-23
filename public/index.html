@@ -82,20 +82,30 @@
 <!-- NAVBAR -->
 <nav class="navbar" id="navbar">
   <div class="nav-left">
-    <a href="#products" class="nav-link">Koleksiyon</a>
-    <a href="#products" class="nav-link">Top Drops</a>
+    <a href="/" class="logo">DROX<span>STORE</span></a>
+    <div class="nav-links">
+      <a href="#products" class="nav-link">Koleksiyon</a>
+      <a href="#products" class="nav-link">Top Drops</a>
+    </div>
   </div>
-  <a href="/" class="logo">DROX<span>STORE</span></a>
+
+  <div class="search-container">
+    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="Ürün ara...">
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
   <div class="nav-right">
     <a href="#" class="nav-link" onclick="event.preventDefault(); openPromotions()">Kampanyalar</a>
-    <a href="#" class="nav-link" onclick="event.preventDefault(); openLookbook()">Lookbook</a>
-    <button class="cart-btn" id="userBtn" onclick="openUserDrawer()" style="margin-right: -10px;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    </button>
-    <button class="cart-btn" id="cartBtn">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      <span class="cart-count" id="cartCount">0</span>
-    </button>
+    <div class="nav-actions">
+      <button class="cart-btn" id="userBtn" onclick="openUserDrawer()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
+      <button class="cart-btn" id="cartBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
   </div>
 </nav>
 
@@ -103,22 +113,55 @@
 <section class="hero">
   <div class="hero-bg"><div class="hero-grid"></div><div class="noise"></div></div>
   <div class="hero-content">
-    <div class="hero-manifesto" style="font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #aaa; margin-bottom: 24px; border-left: 2px solid var(--accent); padding-left: 16px; max-width: 400px; text-align: left; line-height: 1.8;">
-      Modern lüks, zamansız estetik ve kusursuz kumaş mühendisliği. Sadece giyinmeyin, bir duruş sergileyin.
+    <div class="hero-manifesto" style="font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); margin-bottom: 32px; border-left: 2px solid var(--accent); padding-left: 20px; max-width: 500px; line-height: 1.6;">
+      EST. 2026 — MODERN LÜKSÜN YENİ TANIMI. KUSURSUZ KUMAŞ MÜHENDİSLİĞİ VE ZAMANSIZ ESTETİK.
     </div>
-    <div class="hero-tag" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 14px; border-radius: 4px; display: none;"></div>
     <h1 class="hero-title">
-      <span class="line" data-text="ELEVATE">ELEVATE</span>
-      <span class="line accent" data-text="EVERY">EVERY</span>
-      <span class="line" data-text="DETAIL">DETAIL</span>
+      <span class="line">DEFINING</span>
+      <span class="line">THE NEW</span>
+      <span class="line">STANDARD</span>
     </h1>
-    <p class="hero-sub">DroxStore Pro ile sınırları zorlayın. En detaylı koleksiyon, en saf kalite.</p>
+    <p class="hero-sub">DroxStore Pro ile sınırları zorlayın. En detaylı koleksiyon, en saf kalite ve sürdürülebilir moda anlayışı.</p>
     <div class="hero-actions">
-      <a href="#products" class="btn-primary">Koleksiyonu Keşfet</a>
+      <a href="#products" class="btn-primary">Koleksiyonu Keşfet <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a>
       <a href="#" class="btn-ghost" onclick="event.preventDefault(); openLookbook()">2026 Lookbook →</a>
     </div>
   </div>
-  <div class="hero-scroll"><span>SCROLL</span><div class="scroll-line"></div></div>
+  <div class="hero-scroll"><span>SCROLL DOWN</span><div class="scroll-line"></div></div>
+</section>
+
+<!-- TRUST BAR -->
+<section class="features" style="background: var(--bg); padding: 60px 48px;">
+  <div class="feat-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+    <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
+      <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+      </div>
+      <h4 style="font-size: 14px; margin-bottom: 4px;">Hızlı Teslimat</h4>
+      <p style="font-size: 12px; color: var(--text-dim);">Tüm Türkiye'ye 24 saatte kargo.</p>
+    </div>
+    <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
+      <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <h4 style="font-size: 14px; margin-bottom: 4px;">Güvenli Ödeme</h4>
+      <p style="font-size: 12px; color: var(--text-dim);">256-bit SSL şifreleme ile koruma.</p>
+    </div>
+    <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
+      <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <h4 style="font-size: 14px; margin-bottom: 4px;">45 Gün İade</h4>
+      <p style="font-size: 12px; color: var(--text-dim);">Koşulsuz iade ve değişim garantisi.</p>
+    </div>
+    <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
+      <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h4 style="font-size: 14px; margin-bottom: 4px;">Premium Kalite</h4>
+      <p style="font-size: 12px; color: var(--text-dim);">En üst segment kumaş teknolojisi.</p>
+    </div>
+  </div>
 </section>
 
 <!-- MARQUEE -->
@@ -165,17 +208,43 @@
 
 <!-- FOOTER -->
 <footer class="footer">
-  <div class="footer-links" style="padding: 40px 20px 20px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;">
-    <a href="/terms.html" style="color: #888; text-decoration: none; font-size: 13px; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">Kullanım Koşulları</a>
-    <a href="/privacy.html" style="color: #888; text-decoration: none; font-size: 13px; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">Gizlilik Politikası</a>
-    <a href="/refund.html" style="color: #888; text-decoration: none; font-size: 13px; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">İade ve Değişim</a>
-    <a href="/distance-selling.html" style="color: #888; text-decoration: none; font-size: 13px; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">Mesafeli Satış Sözleşmesi</a>
-    <a href="/shipping.html" style="color: #888; text-decoration: none; font-size: 13px; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">Teslimat Politikası</a>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a href="/" class="logo-foot">DROX<em>STORE</em></a>
+      <p>Modern lüksün ve sokak modasının kusursuz birleşimi. 2026'dan beri en iyisi için buradayız.</p>
+      <div class="social-links">
+        <a href="#" class="social-link">IG</a>
+        <a href="#" class="social-link">TW</a>
+        <a href="#" class="social-link">TK</a>
+      </div>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h5>MAĞAZA</h5>
+        <a href="#products">Tüm Ürünler</a>
+        <a href="#products">Yeni Gelenler</a>
+        <a href="#products">Çok Satanlar</a>
+      </div>
+      <div class="footer-col">
+        <h5>DESTEK</h5>
+        <a href="/terms.html">Kullanım Koşulları</a>
+        <a href="/privacy.html">Gizlilik Politikası</a>
+        <a href="/refund.html">İade ve Değişim</a>
+      </div>
+      <div class="footer-col">
+        <h5>SÖZLEŞMELER</h5>
+        <a href="/distance-selling.html">Mesafeli Satış</a>
+        <a href="/shipping.html">Teslimat Politikası</a>
+        <a href="mailto:support@droxstore.com">Bize Ulaşın</a>
+      </div>
+    </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2026 DroxStore v2.0. Tüm hakları saklıdır.</span>
+    <span>© 2026 DroxStore v3.0 Premium. Tüm hakları saklıdır.</span>
     <div class="payment-icons">
-      <span class="pay-icon">VISA</span><span class="pay-icon">MC</span><span class="pay-icon">İYZİCO</span>
+      <span class="pay-icon">VISA</span>
+      <span class="pay-icon">MASTERCARD</span>
+      <span class="pay-icon">PAYRIFF</span>
     </div>
   </div>
 </footer>
@@ -183,7 +252,10 @@
 <!-- MODALS & DRAWERS -->
 <div class="cart-overlay" id="cartOverlay"></div>
 <div class="cart-drawer" id="cartDrawer">
-  <div class="cart-header"><h3>Sepetim (<span id="cartItemCount">0</span>)</h3><button class="cart-close" id="cartClose">✕</button></div>
+  <div class="cart-header">
+    <h3>Sepetim (<span id="cartItemCount">0</span>)</h3>
+    <button class="modal-close" id="cartClose" onclick="closeCart()">✕</button>
+  </div>
   <div class="cart-items" id="cartItems"></div>
   <div class="cart-footer">
     <div class="cart-total"><span>Toplam</span><span id="cartTotal">$0</span></div>
@@ -193,15 +265,15 @@
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="product-modal" id="productModal">
-    <button class="modal-close" id="modalClose" onclick="closeModal()">✕</button>
+    <button class="modal-close" id="modalClose" onclick="closeModal()" style="position: absolute; top: 20px; right: 20px; z-index: 10;">✕</button>
     <div class="modal-content" id="modalContent"></div>
   </div>
 </div>
 
 <!-- CHECKOUT MODAL -->
 <div class="modal-overlay" id="checkoutOverlay">
-  <div class="product-modal checkout-modal">
-    <button class="modal-close" onclick="closeCheckout()">✕</button>
+  <div class="product-modal checkout-modal" style="max-width: 1000px;">
+    <button class="modal-close" onclick="closeCheckout()" style="position: absolute; top: 20px; right: 20px; z-index: 10;">✕</button>
     <div class="checkout-layout">
       <div class="checkout-left">
         <div class="checkout-form-section">
@@ -232,22 +304,22 @@
       <div class="checkout-right">
         <h2 style="font-family: Bebas Neue; font-size:32px; letter-spacing:2px; margin-bottom: 10px;">ÖDEME YÖNTEMİ</h2>
 
-        <!-- ePoint Ödeme Bilgisi -->
+        <!-- Payriff Ödeme Bilgisi -->
         <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; margin-bottom: 20px; text-align: center;">
           <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
             <div style="width: 48px; height: 48px; background: rgba(232,255,71,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🔒</div>
             <div style="text-align: left;">
-              <div style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;">ePoint ile Güvenli Ödeme</div>
+              <div style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;">Payriff ile Güvenli Ödeme</div>
               <div style="font-size: 12px; color: #888; margin-top: 2px;">Visa · Mastercard · Kapıda Ödeme</div>
             </div>
           </div>
           <p style="font-size: 12px; color: #666; line-height: 1.6;">
-            "Siparişi Onayla" butonuna tıkladığınızda güvenli ePoint ödeme sayfasına yönlendirileceksiniz. Kart bilgileriniz yalnızca ePoint altyapısında işlenir.
+            "Siparişi Onayla" butonuna tıkladığınızda güvenli Payriff ödeme sayfasına yönlendirileceksiniz. Kart bilgileriniz yalnızca Payriff altyapısında işlenir.
           </p>
           <div style="display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap;">
             <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #aaa;">VISA</span>
             <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #aaa;">MASTERCARD</span>
-            <span style="background: rgba(232,255,71,0.1); border: 1px solid rgba(232,255,71,0.2); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: var(--accent);">ePOINT</span>
+            <span style="background: rgba(232,255,71,0.1); border: 1px solid rgba(232,255,71,0.2); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: var(--accent);">PAYRIFF</span>
           </div>
         </div>
 
@@ -261,9 +333,9 @@
         </div>
 
         <button type="button" class="btn-primary full chk-submit-btn" id="chkSubmitBtn" onclick="processCheckout()" style="margin-top:15px; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-          <span>🔒 ePoint ile Öde</span>
+          <span>Payriff ile Öde</span>
           <span style="opacity:0.7;">·</span>
-          <span id="chkBtnTotal">0</span> ₺
+          <span id="chkBtnTotal">$0</span>
         </button>
         <p style="text-align:center; font-size:11px; color:#555; margin-top:8px;">SSL şifreli güvenli bağlantı</p>
       </div>
@@ -608,7 +680,7 @@
           <p style="font-size: 13px; color: #888; margin-bottom: 15px;">Bu ayarlar anında tüm sistemi etkiler.</p>
           <div style="display:flex; flex-direction:column; gap:15px; background:rgba(255,255,255,0.02); padding:15px; border-radius:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">VIP Müşteri Olma Harcama Limiti (TL):</span>
+              <span style="font-size:14px;">VIP Müşteri Olma Harcama Limiti ($):</span>
               <input type="number" id="set_vipThreshold" style="width:120px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -636,7 +708,7 @@
               <input type="password" id="set_printfulToken" placeholder="gJbhq..." style="width:200px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">Dolar -> TL Kuru (Örn: 33.00):</span>
+              <span style="font-size:14px;">Dolar Kuru (Örn: 1.00):</span>
               <input type="number" id="set_usdRate" style="width:120px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">

@@ -1125,7 +1125,7 @@ async function refreshAdminPanel() {
     if(statTotal) statTotal.textContent = stats.totalProducts;
     if(statUsers) statUsers.textContent = stats.totalUsers || 0;
     if(statSales) statSales.textContent = stats.totalSales || 0;
-    if(statRevenue) statRevenue.textContent = '$' + (stats.totalRevenue || 0).toLocaleString('en-US');
+    if(statRevenue) statRevenue.textContent = (stats.totalRevenue || 0).toLocaleString() + ' AZN';
     
     // Product List
     const pList = document.getElementById('adminProductList');
@@ -1136,7 +1136,7 @@ async function refreshAdminPanel() {
         <div class="admin-product-thumb"><img src="${p.images?.[0] || ''}"></div>
         <div class="admin-product-details">
           <strong>${p.name} ${p.isFeatured ? '<span style="color:gold;">★</span>' : ''} ${p.isPrintful ? '<span style="color:#6366f1; font-size:10px;">PRINTFUL</span>' : ''}</strong>
-          <span style="font-size:11px;">${p.category} · $${p.price} | Stok: ${stockTxt}</span>
+          <span style="font-size:11px;">${p.category} · ${p.price} AZN | Stok: ${stockTxt}</span>
         </div>
         <div class="admin-product-actions" style="display:flex; gap:5px;">
           <button class="admin-delete-btn" style="border-color:#6366f1; color:#6366f1;" onclick="openEditProduct('${p.id}')">Düzenle</button>
@@ -1155,7 +1155,7 @@ async function refreshAdminPanel() {
         <div class="order-card">
           <div class="order-header">
             <span>Sipariş #${o.id.substring(0,6)}</span>
-            <span>$${o.total}</span>
+            <span>${o.total} AZN</span>
           </div>
           <div><strong style="color:var(--accent);">Müşteri:</strong> ${o.customerName} - ${o.phone}</div>
           <div style="margin-top:8px; margin-bottom:8px; padding: 10px; background: rgba(0,0,0,0.3); border-left: 2px solid var(--accent); border-radius:4px;">
@@ -1393,8 +1393,9 @@ async function syncPrintfulProducts() {
   
   try {
     const res = await API.authAction('/api/printful/sync', 'POST', {});
-    showToast(res.message || 'Ürünler Başarıyla Çekildi!');
+    showToast(`Başarılı! ${res.count} ürün senkronize edildi.`);
     await refreshAllData();
+    refreshAdminPanel();
   } catch(err) {
     showToast('Printful Hata: ' + err.message);
   } finally {

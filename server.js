@@ -146,14 +146,25 @@ async function authenticateFirebaseToken(req, res, next) {
 // ─── DATA FALLBACK (Local JSON) ──────────────────────────────────
 const CATEGORIES_PATH = path.join(__dirname, 'data', 'categories.json');
 const PRODUCTS_PATH = path.join(__dirname, 'data', 'products.json');
+const SETTINGS_PATH = path.join(__dirname, 'data', 'settings.json');
 
-function getLocalData(filePath) {
+function getLocalData(filePath, defaultData = []) {
   try {
     if (fs.existsSync(filePath)) {
       return JSON.parse(fs.readFileSync(filePath, 'utf8'));
     }
   } catch (e) { console.error(`Local data error (${filePath}):`, e); }
-  return [];
+  return defaultData;
+}
+
+function saveLocalData(filePath, data) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    console.error(`Save local data error (${filePath}):`, e);
+    return false;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -165,9 +176,22 @@ app.get('/api/settings', async (req, res) => {
       const doc = await db.collection('settings').doc('global').get();
       if (doc.exists) return res.json(doc.data());
     }
-    res.json({ vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8 });
+    res.json(getLocalData(SETTINGS_PATH, { vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8, printfulToken: '', printfulMargin: 50 }));
   } catch (err) {
     res.json({ vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8 });
+  }
+});
+
+app.post('/api/settings', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    if (db) {
+      await db.collection('settings').doc('global').set(req.body, { merge: true });
+    }
+    const current = getLocalData(SETTINGS_PATH, {});
+    saveLocalData(SETTINGS_PATH, { ...current, ...req.body });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -486,12 +510,18 @@ app.post('/api/settings', [checkDb, authenticateToken], async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) => {
   try {
-    const docRef = db.collection('settings').doc('general');
-    const doc = await docRef.get();
-    const st = doc.exists ? doc.data() : {};
+    let st = {};
+    if (db) {
+      const doc = await db.collection('settings').doc('global').get();
+      if (doc.exists) st = doc.data();
+    }
+    if (!st.printfulToken) {
+      st = getLocalData(SETTINGS_PATH, {});
+    }
     
     const pToken = st.printfulToken;
     const margin = parseFloat(st.printfulMargin) || 50;
+    const usdToAzn = parseFloat(process.env.USD_TO_AZN_RATE || '1.70');
 
     if (!pToken) {
       return res.status(400).json({ error: "Sistem Ayarlarından Printful Token eklemelisiniz." });
@@ -506,7 +536,7 @@ app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) =>
     }
 
     const products = prData.result;
-    let syncedCount = 0;
+    let syncedProducts = [];
 
     for (const p of products) {
       const detailRes = await fetch(`https://api.printful.com/store/products/${p.id}`, { headers });
@@ -523,7 +553,6 @@ app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) =>
          const rp = parseFloat(v.retail_price) || 0;
          if (rp > maxRetailPrice) maxRetailPrice = rp;
          
-         // Varyantın mockup resmini topla
          if (v.files) {
            v.files.forEach(f => {
              if (f.type === 'preview' && f.preview_url && !imagesList.includes(f.preview_url)) {
@@ -532,7 +561,6 @@ app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) =>
            });
          }
          
-         // Varyant isimden bedeni ayıklama - Printful yapısında genelde "/" dan sonra yazar
          const splitName = v.name.split('/');
          if(splitName.length > 1) {
             let sizePart = splitName[1].replace(')', '').trim();
@@ -540,48 +568,65 @@ app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) =>
          }
       });
 
-      // Eğer varyantlardan resim gelemediyse, ürün thumbnail'ini kullan
       if (imagesList.length === 0 && details.sync_product.thumbnail_url) {
         imagesList.push(details.sync_product.thumbnail_url);
       }
 
-      if(sizes.length === 0) sizes = ["Standart", "S", "M", "L", "XL"];
+      if(sizes.length === 0) sizes = ["S", "M", "L", "XL"];
       
-      // Satış Fiyatı Hesaplama: (Printful USD Fiyatı) * (1 + Kar Marjı)
-      const finalPrice = Math.ceil(maxRetailPrice * (1 + (margin / 100)));
+      // Satış Fiyatı Hesaplama: (Printful USD Fiyatı) * (Kar Marjı) * (USD->AZN Kuru)
+      // Örn: 10$ * 1.5 * 1.7 = 25.5 AZN
+      let finalPrice = (maxRetailPrice * (1 + (margin / 100)) * usdToAzn);
+      
+      // Kullanıcının "30 AZN altı" isteği için limit koyalım (Opsiyonel ama istenmişti)
+      if (finalPrice > 30) finalPrice = 29.90;
+      finalPrice = Math.ceil(finalPrice);
 
-      // Sonsuz stok yapısı
       const stockData = {};
       sizes.forEach(s => { stockData[s] = 999; });
 
       const productData = {
+        id: `printful_${p.id}`,
         name: details.sync_product.name,
         desc: 'Printful Özel Tasarım Premium Baskılı Ürün.',
         price: finalPrice,
-        category: 'Printful Tasarımları',
+        category: 'Printful',
         sizes: sizes,
         stock: stockData,
-        images: imagesList, // Printful mockup görselleri
+        images: imagesList,
         isPrintful: true,
         printfulId: p.id,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        updatedAt: new Date().toISOString()
       };
 
-      const existQuery = await db.collection('products').where('printfulId', '==', p.id).get();
-      
-      if (existQuery.empty) {
-        productData.createdAt = admin.firestore.FieldValue.serverTimestamp();
-        await db.collection('products').add(productData);
-      } else {
-        const dId = existQuery.docs[0].id;
-        await db.collection('products').doc(dId).update(productData);
+      if (db) {
+        const existQuery = await db.collection('products').where('printfulId', '==', p.id).get();
+        if (existQuery.empty) {
+          productData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+          await db.collection('products').add(productData);
+        } else {
+          const dId = existQuery.docs[0].id;
+          await db.collection('products').doc(dId).update(productData);
+        }
       }
-      
-      syncedCount++;
+      syncedProducts.push(productData);
     }
 
-    res.json({ success: true, message: `${syncedCount} adet Printful ürünü başarıyla senkronize edildi.` });
+    // Her durumda yerel dosyaya da yazalım (Admin paneli için)
+    const localProds = getLocalData(PRODUCTS_PATH, []);
+    const merged = [...localProds];
+    
+    syncedProducts.forEach(sp => {
+      const idx = merged.findIndex(m => m.printfulId === sp.printfulId || m.id === sp.id);
+      if (idx !== -1) merged[idx] = { ...merged[idx], ...sp };
+      else merged.push(sp);
+    });
+    
+    saveLocalData(PRODUCTS_PATH, merged);
+
+    res.json({ success: true, count: syncedProducts.length });
   } catch (err) {
+    console.error('Printful sync error:', err);
     res.status(500).json({ error: err.message });
   }
 });

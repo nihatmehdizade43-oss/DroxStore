@@ -133,7 +133,9 @@ function handleRoute() {
   } else if (hash === '#contact') {
     showView('contact-view');
   } else if (hash === '#auth') {
-    showView('auth-view');
+    showView('home-view');
+    openUserDrawer();
+    window.location.hash = ''; // reset hash so it doesn't stay
   } else if (hash === '#admin') {
     openAdmin(); // open admin modal
     window.location.hash = ''; // reset hash so it doesn't stay
@@ -1073,9 +1075,9 @@ async function handleGoogleLogin() {
 // ─── EMAIL LOGIN & REGISTER ─────────────────────────────────────
 async function handleUserRegister(e) {
   e.preventDefault();
-  const name = document.getElementById('rNameFloat') ? document.getElementById('rNameFloat').value : document.getElementById('rName').value;
-  const email = document.getElementById('rEmailFloat') ? document.getElementById('rEmailFloat').value : document.getElementById('rEmail').value;
-  const password = document.getElementById('rPassFloat') ? document.getElementById('rPassFloat').value : document.getElementById('rPass').value;
+  const name = document.getElementById('rName').value;
+  const email = document.getElementById('rEmail').value;
+  const password = document.getElementById('rPass').value;
   
   const btn = e.target.querySelector('button');
   btn.disabled = true; btn.textContent = 'Kayıt Olunuyor...';
@@ -1087,10 +1089,9 @@ async function handleUserRegister(e) {
     await firebase.auth().signOut();
     
     // Formu temizle
-    if(document.getElementById('rNameFloat')) document.getElementById('rNameFloat').value = '';
-    if(document.getElementById('rEmailFloat')) document.getElementById('rEmailFloat').value = '';
-    if(document.getElementById('rPassFloat')) document.getElementById('rPassFloat').value = '';
-    if(document.getElementById('rName')) document.getElementById('rName').value = '';
+    document.getElementById('rName').value = '';
+    document.getElementById('rEmail').value = '';
+    document.getElementById('rPass').value = '';
     
     showToast('Qeydiyyat uğurludur! Zəhmət olmasa emailinizə gələn linklə hesabınızı təsdiqləyin.');
     window.location.hash = '#home';

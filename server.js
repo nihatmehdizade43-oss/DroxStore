@@ -767,8 +767,8 @@ app.post('/api/reviews', [checkDb, authenticateFirebaseToken, upload.single('ima
 const PAYRIFF_API_KEY = process.env.PAYRIFF_API_KEY || 'your_payriff_api_key';
 const PAYRIFF_SECRET_KEY = process.env.PAYRIFF_SECRET_KEY || 'your_payriff_secret_key';
 const PAYRIFF_MERCHANT_ID = process.env.PAYRIFF_MERCHANT_ID || 'your_merchant_id';
-const PAYRIFF_SUCCESS_URL = process.env.PAYRIFF_SUCCESS_URL || 'https://droxstore.onrender.com/payment-success.html';
-const PAYRIFF_ERROR_URL = process.env.PAYRIFF_ERROR_URL || 'https://droxstore.onrender.com/payment-error.html';
+const PAYRIFF_SUCCESS_URL = process.env.PAYRIFF_SUCCESS_URL || 'https://drox-store.vercel.app/payment-success.html';
+const PAYRIFF_ERROR_URL = process.env.PAYRIFF_ERROR_URL || 'https://drox-store.vercel.app/payment-error.html';
 
 // Payriff ödeme başlat — sipariş bilgilerini pending olarak kaydet, Payriff'e yönlendir
 app.post('/api/payment/start', checkDb, async (req, res) => {

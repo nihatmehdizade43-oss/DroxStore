@@ -1,22 +1,37 @@
 [
   {
-    "id": "cat_1",
+    "id": "hoodie",
+    "name": "Hoodie & Sweat",
+    "slug": "hoodie"
+  },
+  {
+    "id": "tshirt",
     "name": "T-Shirt",
     "slug": "tshirt"
   },
   {
-    "id": "cat_2",
-    "name": "Hoodie",
-    "slug": "hoodie"
+    "id": "pantolon",
+    "name": "Pantolon & Cargo",
+    "slug": "pantolon"
   },
   {
-    "id": "cat_3",
-    "name": "Sweatshirt",
-    "slug": "sweatshirt"
+    "id": "outerwear",
+    "name": "Ceket & Mont",
+    "slug": "outerwear"
   },
   {
-    "id": "cat_1776359030189",
-    "name": "slalom",
-    "slug": "slalom"
+    "id": "ayakkabi",
+    "name": "Ayakkabı",
+    "slug": "ayakkabi"
+  },
+  {
+    "id": "knitwear",
+    "name": "Triko & Kazak",
+    "slug": "knitwear"
+  },
+  {
+    "id": "aksesuar",
+    "name": "Aksesuar",
+    "slug": "aksesuar"
   }
 ]

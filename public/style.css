@@ -5,22 +5,22 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #050505;
-  --bg2: #0a0a0a;
-  --bg3: #0f0f0f;
+  --bg: #0A0A0A;
+  --bg2: #141414;
+  --bg3: #1a1a1a;
   --surface: #141414;
-  --border: rgba(255,255,255,0.06);
-  --accent: #e8ff47;
-  --accent-rgb: 232, 255, 71;
-  --accent2: #ff4747;
-  --text: #ffffff;
-  --text-dim: #a0a0a0;
-  --text-muted: #555555;
+  --border: rgba(255, 215, 0, 0.15);
+  --accent: #FFD700;
+  --accent-rgb: 255, 215, 0;
+  --accent2: #E5C100;
+  --text: #FFFFFF;
+  --text-dim: #CCCCCC;
+  --text-muted: #888888;
   --radius: 20px;
   --radius-sm: 12px;
-  --font-display: 'Bebas Neue', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
-  --font-ui: 'Syne', sans-serif;
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+  --font-ui: 'Inter', sans-serif;
   --trans: cubic-bezier(0.19, 1, 0.22, 1);
 }
 
@@ -590,9 +590,19 @@ body { top: 0px !important; }
 }
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 28px;
   max-width: 1280px; margin: 0 auto;
+}
+@media (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Empty Store */
@@ -1845,3 +1855,115 @@ body { top: 0px !important; }
 #userDrawer { width: 900px !important; max-width: 95vw; height: 85vh !important; top: 50% !important; left: 50% !important; transform: translate(100vw, -50%) !important; right: auto !important; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8); }
 #userDrawer.open { transform: translate(-50%, -50%) !important; right: auto !important; }
 @media(max-width:900px) { #userDrawer { width: 100% !important; height: 100vh !important; max-width: 100%; border-radius: 0; transform: translate(100vw, 0) !important; top: 0 !important; left: 0 !important; } #userDrawer.open { transform: translate(0, 0) !important; } }
+
+/* ============================================
+   PREMIUM & LUXURY ADDITIONS (GLASSMORPHISM, TYPEWRITER)
+   ============================================ */
+
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  border-right: 0.15em solid var(--accent);
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  animation: typing 2.5s steps(30, end) forwards, blink-caret 0.75s step-end infinite;
+  max-width: 0;
+}
+
+@keyframes typing {
+  from { max-width: 0; }
+  to { max-width: 100%; }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--accent); }
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(20, 20, 20, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius);
+}
+
+.glass-nav {
+  background: rgba(10, 10, 10, 0.6) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15) !important;
+}
+
+/* Shimmer Loading */
+.shimmer {
+  background: #111;
+  background-image: linear-gradient(
+    to right,
+    #111 0%,
+    #222 20%,
+    #111 40%,
+    #111 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 800px 100%;
+  animation-duration: 1.5s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-name: placeholderShimmer;
+  animation-timing-function: linear;
+}
+
+@keyframes placeholderShimmer {
+  0% { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+
+/* Subtle Gradient Background */
+body {
+  background: linear-gradient(135deg, #0A0A0A 0%, #141414 100%);
+  background-attachment: fixed;
+}
+
+/* SPA Router Views */
+.app-view {
+  display: none;
+}
+.app-view.active-view {
+  display: block;
+  animation: view-fade-in 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes view-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Checkout Button Gradient Pulse */
+.chk-submit-btn {
+  background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%) !important;
+  color: #000 !important;
+  border: none !important;
+  animation: pulse-gold 2s infinite;
+  transition: all 0.3s ease;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.chk-submit-btn:hover {
+  transform: scale(1.05);
+}
+
+@keyframes pulse-gold {
+  0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(255, 215, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+}

@@ -102,7 +102,59 @@ document.addEventListener('DOMContentLoaded', async () => {
   initReveal();
   updateCartUI();
   await refreshAllData();
+  initRouter();
 });
+
+// ─── SPA ROUTER ──────────────────────────────────────────────────
+function initRouter() {
+  window.addEventListener('hashchange', handleRoute);
+  handleRoute();
+}
+
+function handleRoute() {
+  const hash = window.location.hash || '#home';
+  const sections = document.querySelectorAll('.app-view');
+  
+  // Hide all sections first
+  sections.forEach(s => {
+    s.style.display = 'none';
+    s.classList.remove('active-view');
+  });
+
+  // Handle specific routes
+  if (hash === '#home') {
+    showView('home-view');
+    showView('catSection');
+  } else if (hash.startsWith('#products')) {
+    showView('products');
+    document.querySelector('.hero').style.display = 'none'; // Ensure hero is hidden
+  } else if (hash === '#about') {
+    showView('about-view');
+  } else if (hash === '#contact') {
+    showView('contact-view');
+  } else {
+    showView('home-view');
+    showView('catSection');
+  }
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showView(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.display = 'block';
+    el.classList.add('active-view');
+    // Re-trigger reveal animation
+    el.style.opacity = "0";
+    el.style.transform = "translateY(20px)";
+    setTimeout(() => {
+      el.style.transition = "all 0.5s ease";
+      el.style.opacity = "1";
+      el.style.transform = "translateY(0)";
+    }, 50);
+  }
+}
 
 function initSearch() {
   const searchInput = document.getElementById('searchInput');
@@ -334,6 +386,7 @@ function createProductCard(p, i) {
           <img src="${mainImage}" alt="${p.name}" class="prod-real-img" loading="lazy">
         </div>
         ${badgeHtml}
+        <button class="wishlist-btn" onclick="event.stopPropagation(); toggleWishlist('${p.id}', this)" style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.5); border: none; color: white; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer; z-index: 5; transition: transform 0.2s, color 0.2s;">🤍</button>
         <div class="prod-overlay">
           <button class="overlay-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">Hızlı Ekle</button>
         </div>
@@ -346,6 +399,20 @@ function createProductCard(p, i) {
       </div>
     </div>
   `;
+}
+
+function toggleWishlist(id, btn) {
+  const isWished = btn.textContent === '💛';
+  if (isWished) {
+    btn.textContent = '🤍';
+    showToast('Favorilerden çıkarıldı');
+  } else {
+    btn.textContent = '💛';
+    btn.style.color = 'var(--accent)';
+    btn.style.transform = 'scale(1.2)';
+    setTimeout(() => btn.style.transform = 'scale(1)', 200);
+    showToast('Favorilere eklendi');
+  }
 }
 
 function setProductFilter(cat, btn) {

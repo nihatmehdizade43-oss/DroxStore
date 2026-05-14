@@ -37,28 +37,31 @@ let db = null;
 try {
   let serviceAccount;
   
-  // Firebase Service Account configuration via .env
-  let b64Key = process.env.FIREBASE_SERVICE_ACCOUNT_B64 ? process.env.FIREBASE_SERVICE_ACCOUNT_B64.trim() : null;
-  if (!b64Key) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT_B64 is missing in .env");
-  }
-  // Base64 string içindeki olası boşluk/satır sonlarını temizle
-  b64Key = b64Key.replace(/\s/g, '');
+  // Firebase Service Account configuration
+  const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
   
-  try {
+  if (fs.existsSync(serviceAccountPath)) {
+    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    console.log('✅ Firebase serviceAccountKey.json dosyası bulundu.');
+  } else {
+    let b64Key = process.env.FIREBASE_SERVICE_ACCOUNT_B64 ? process.env.FIREBASE_SERVICE_ACCOUNT_B64.trim() : null;
+    if (!b64Key) {
+      throw new Error("FIREBASE_SERVICE_ACCOUNT_B64 is missing in .env and serviceAccountKey.json not found");
+    }
+    b64Key = b64Key.replace(/\s/g, '');
     let decoded = Buffer.from(b64Key, 'base64').toString('utf8');
-    
-    // Literal newline karakterlerini JSON string değerleri içinde kaçış karakterine çevir
-    const fixedDecoded = decoded.replace(/"([^"]*)"/g, (match, p1) => {
-      return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
-    });
-    serviceAccount = JSON.parse(fixedDecoded);
-  } catch (e) {
-    console.error("❌ Firebase JSON parse hatası!");
-    console.error("ℹ️ İPUCU: .env dosyasındaki FIREBASE_SERVICE_ACCOUNT_B64 anahtarı eksik veya hatalı görünüyor.");
-    console.error("ℹ️ ÇÖZÜM: Firebase serviceAccountKey.json dosyanızı base64'e çevirip .env dosyasına tek satır olarak yapıştırın.");
-    console.error("ℹ️ KOMUT: 'node -e \"console.log(require(\'fs\').readFileSync(\'serviceAccountKey.json\').toString(\'base64\'))\"'");
-    throw e;
+    try {
+      serviceAccount = JSON.parse(decoded);
+    } catch (e) {
+      const fixedDecoded = decoded.replace(/"([^"]*)"/g, (match, p1) => {
+        return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
+      });
+      serviceAccount = JSON.parse(fixedDecoded);
+    }
+  }
+
+  if (serviceAccount && serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
   }
 
   admin.initializeApp({
@@ -906,7 +909,10 @@ app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`🚀 DroxStore Cloud Server running on port ${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`🚀 DroxStore Cloud Server running on port ${PORT}`));
+}
+module.exports = app;
 // --- SUPPORT TICKETS API ---
 let supportTickets = [];
 app.post('/api/support/ticket', (req, res) => {

@@ -132,6 +132,11 @@ function handleRoute() {
     showView('about-view');
   } else if (hash === '#contact') {
     showView('contact-view');
+  } else if (hash === '#auth') {
+    showView('auth-view');
+  } else if (hash === '#admin') {
+    openAdmin(); // open admin modal
+    window.location.hash = ''; // reset hash so it doesn't stay
   } else {
     showView('home-view');
     showView('catSection');
@@ -1068,9 +1073,9 @@ async function handleGoogleLogin() {
 // ─── EMAIL LOGIN & REGISTER ─────────────────────────────────────
 async function handleUserRegister(e) {
   e.preventDefault();
-  const name = document.getElementById('rName').value;
-  const email = document.getElementById('rEmail').value;
-  const password = document.getElementById('rPass').value;
+  const name = document.getElementById('rNameFloat') ? document.getElementById('rNameFloat').value : document.getElementById('rName').value;
+  const email = document.getElementById('rEmailFloat') ? document.getElementById('rEmailFloat').value : document.getElementById('rEmail').value;
+  const password = document.getElementById('rPassFloat') ? document.getElementById('rPassFloat').value : document.getElementById('rPass').value;
   
   const btn = e.target.querySelector('button');
   btn.disabled = true; btn.textContent = 'Kayıt Olunuyor...';
@@ -1078,18 +1083,39 @@ async function handleUserRegister(e) {
     const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await result.user.updateProfile({ displayName: name });
     
-    // Auto sync after register so user logs in immediately!
-    await syncFirebaseUserWithBackend(result.user, name);
+    await result.user.sendEmailVerification();
+    await firebase.auth().signOut();
     
     // Formu temizle
-    document.getElementById('rName').value = '';
-    document.getElementById('rEmail').value = '';
-    document.getElementById('rPass').value = '';
+    if(document.getElementById('rNameFloat')) document.getElementById('rNameFloat').value = '';
+    if(document.getElementById('rEmailFloat')) document.getElementById('rEmailFloat').value = '';
+    if(document.getElementById('rPassFloat')) document.getElementById('rPassFloat').value = '';
+    if(document.getElementById('rName')) document.getElementById('rName').value = '';
+    
+    showToast('Qeydiyyat uğurludur! Zəhmət olmasa emailinizə gələn linklə hesabınızı təsdiqləyin.');
+    window.location.hash = '#home';
+    openUserDrawer(); // open login side
   } catch(err) {
     showToast('Kayıt başarısız: ' + err.message);
   } finally {
     btn.disabled = false; btn.textContent = 'Hesap Oluştur';
   }
+}
+
+function checkPwdStrength(val) {
+  const bar = document.getElementById('pwdBar');
+  if(!bar) return;
+  let score = 0;
+  if(val.length > 5) score++;
+  if(/[A-Z]/.test(val)) score++;
+  if(/[0-9]/.test(val)) score++;
+  if(/[^A-Za-z0-9]/.test(val)) score++;
+  
+  if(score === 0) { bar.style.width = '0%'; }
+  else if(score === 1) { bar.style.width = '25%'; bar.style.backgroundColor = 'red'; }
+  else if(score === 2) { bar.style.width = '50%'; bar.style.backgroundColor = 'orange'; }
+  else if(score === 3) { bar.style.width = '75%'; bar.style.backgroundColor = 'yellow'; }
+  else if(score >= 4) { bar.style.width = '100%'; bar.style.backgroundColor = '#4ade80'; }
 }
 
 async function handleUserLogin(e) {
@@ -1101,7 +1127,13 @@ async function handleUserLogin(e) {
   btn.disabled = true; btn.textContent = 'Giriş Yapılıyor...';
   try {
     const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+    if (!result.user.emailVerified) {
+      await firebase.auth().signOut();
+      showToast('Xəta: Zəhmət olmasa email ünvanınızı təsdiqləyin!');
+      return;
+    }
     await syncFirebaseUserWithBackend(result.user, result.user.displayName);
+    window.location.hash = '#home';
   } catch(err) {
     showToast('Giriş reddedildi: ' + err.message);
   } finally {

@@ -1897,29 +1897,18 @@ body { top: 0px !important; }
   border-bottom: 1px solid rgba(255, 215, 0, 0.15) !important;
 }
 
-/* Shimmer Loading */
+/* Removed heavy shimmer animation for performance. Using simple opacity pulse. */
 .shimmer {
-  background: #111;
-  background-image: linear-gradient(
-    to right,
-    #111 0%,
-    #222 20%,
-    #111 40%,
-    #111 100%
-  );
-  background-repeat: no-repeat;
-  background-size: 800px 100%;
-  animation-duration: 1.5s;
-  animation-fill-mode: forwards;
-  animation-iteration-count: infinite;
-  animation-name: placeholderShimmer;
-  animation-timing-function: linear;
+  background: rgba(255, 255, 255, 0.05);
+  animation: pulse-opacity 1.5s infinite alternate;
 }
 
-@keyframes placeholderShimmer {
-  0% { background-position: -468px 0; }
-  100% { background-position: 468px 0; }
+@keyframes pulse-opacity {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
 }
+
+
 
 /* Subtle Gradient Background */
 body {
@@ -1966,4 +1955,74 @@ body {
   0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
   70% { box-shadow: 0 0 0 15px rgba(255, 215, 0, 0); }
   100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+}
+
+/* Floating Labels & Split Screen Auth */
+.auth-split {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.auth-image {
+  flex: 1;
+  background: linear-gradient(rgba(10,10,10,0.3), rgba(10,10,10,0.8)), url('https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=1000&auto=format&fit=crop') center/cover;
+  display: none;
+}
+@media (min-width: 768px) {
+  .auth-image { display: block; }
+}
+.auth-form-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+}
+.float-group {
+  position: relative;
+  margin-bottom: 24px;
+}
+.float-input {
+  width: 100%;
+  padding: 16px 12px 8px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+  color: white;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.float-input:focus {
+  border-bottom-color: var(--accent);
+}
+.float-label {
+  position: absolute;
+  left: 12px;
+  top: 14px;
+  color: var(--text-dim);
+  font-size: 16px;
+  transition: 0.2s ease all;
+  pointer-events: none;
+}
+.float-input:focus ~ .float-label,
+.float-input:not(:placeholder-shown) ~ .float-label {
+  top: -8px;
+  font-size: 12px;
+  color: var(--accent);
+}
+.pwd-strength {
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.pwd-strength-bar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s, background 0.3s;
 }

@@ -185,19 +185,73 @@
   </div>
 </div>
 
-<!-- INSTAGRAM FEED -->
-<section class="instagram-feed" style="padding: 60px 0;">
-  <div class="section-header" style="margin-bottom: 30px;">
-    <span class="section-tag">@DROXSTORE</span>
-    <h2>Bizi Takip Edin</h2>
+<!-- EXCLUSIVE CLUB SECTION -->
+<section class="exclusive-club" style="padding: 80px 48px; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(15,15,15,1) 0%, rgba(25,20,35,1) 50%, rgba(15,15,15,1) 100%);">
+  <!-- Animated background elements -->
+  <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
+    <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(232,255,71,0.03) 0%, transparent 50%); animation: floatBg 15s ease-in-out infinite;"></div>
+    <div style="position: absolute; top: 20%; right: 10%; width: 300px; height: 300px; border: 1px solid rgba(232,255,71,0.06); border-radius: 50%; animation: pulse 4s ease-in-out infinite;"></div>
+    <div style="position: absolute; bottom: 10%; left: 5%; width: 200px; height: 200px; border: 1px solid rgba(232,255,71,0.04); border-radius: 50%; animation: pulse 6s ease-in-out infinite reverse;"></div>
   </div>
-  <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px;">
-    <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80" style="width:100%; aspect-ratio:1; object-fit:cover; filter: grayscale(50%); transition: filter 0.3s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(50%)'">
-    <img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400&q=80" style="width:100%; aspect-ratio:1; object-fit:cover; filter: grayscale(50%); transition: filter 0.3s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(50%)'">
-    <img src="https://images.unsplash.com/photo-1434389678243-7b91be309192?w=400&q=80" style="width:100%; aspect-ratio:1; object-fit:cover; filter: grayscale(50%); transition: filter 0.3s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(50%)'">
-    <img src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&q=80" style="width:100%; aspect-ratio:1; object-fit:cover; filter: grayscale(50%); transition: filter 0.3s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(50%)'">
-    <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80" style="width:100%; aspect-ratio:1; object-fit:cover; filter: grayscale(50%); transition: filter 0.3s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(50%)'">
-    <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80" style="width:100%; aspect-ratio:1; object-fit:cover; filter: grayscale(50%); transition: filter 0.3s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(50%)'">
+  <style>
+    @keyframes floatBg { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(2%, -2%) rotate(1deg); } }
+    @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+    .exclusive-stat { text-align: center; padding: 20px; }
+    .exclusive-stat .stat-num { display: block; font-family: var(--font-display); font-size: 42px; color: var(--accent); line-height: 1; margin-bottom: 6px; }
+    .exclusive-stat .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.15em; }
+    .club-email-wrap { position: relative; max-width: 480px; margin: 0 auto; }
+    .club-email-wrap input { width: 100%; padding: 18px 160px 18px 24px; border: 1px solid rgba(232,255,71,0.15); background: rgba(255,255,255,0.03); color: white; border-radius: 60px; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.3s, box-shadow 0.3s; backdrop-filter: blur(10px); }
+    .club-email-wrap input:focus { border-color: rgba(232,255,71,0.4); box-shadow: 0 0 30px rgba(232,255,71,0.08); }
+    .club-email-wrap input::placeholder { color: rgba(255,255,255,0.3); }
+    .club-email-wrap button { position: absolute; right: 5px; top: 5px; bottom: 5px; background: var(--accent); color: #000; border: none; border-radius: 60px; padding: 0 28px; font-weight: 700; font-size: 13px; cursor: pointer; letter-spacing: 0.05em; transition: transform 0.2s, box-shadow 0.2s; }
+    .club-email-wrap button:hover { transform: scale(1.03); box-shadow: 0 4px 20px rgba(232,255,71,0.3); }
+    @media (max-width: 768px) {
+      .exclusive-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .club-email-wrap input { padding-right: 24px; }
+      .club-email-wrap button { position: relative; right: auto; top: auto; bottom: auto; width: 100%; margin-top: 10px; padding: 14px; border-radius: 60px; }
+      .club-email-wrap { display: flex; flex-direction: column; }
+    }
+  </style>
+
+  <div style="position: relative; z-index: 1; text-align: center; max-width: 700px; margin: 0 auto;">
+    <!-- Badge -->
+    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232,255,71,0.08); border: 1px solid rgba(232,255,71,0.15); padding: 8px 20px; border-radius: 60px; margin-bottom: 30px;">
+      <span style="width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite;"></span>
+      <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 600;">Exclusive Members Club</span>
+    </div>
+
+    <h2 style="font-family: var(--font-display); font-size: clamp(32px, 5vw, 56px); line-height: 1.1; margin-bottom: 16px; color: white;">
+      Premium Dünyaya<br><span style="color: var(--accent);">İlk Sən Daxil Ol</span>
+    </h2>
+    <p style="font-size: 15px; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;">
+      Yeni kolleksiyalar, xüsusi endirimlar və limitli buraxılışlardan ilk xəbərdar olmaq üçün qeydiyyatdan keç.
+    </p>
+
+    <!-- Email Form -->
+    <div class="club-email-wrap" style="margin-bottom: 50px;">
+      <input type="email" placeholder="E-poçt ünvanınızı daxil edin..." id="clubEmailInput">
+      <button onclick="if(document.getElementById('clubEmailInput').value) { showToast('Təbriklər! Artıq DroxStore ailəsindəsiniz 🎉'); document.getElementById('clubEmailInput').value=''; } else { showToast('Zəhmət olmasa e-poçt daxil edin'); }">ÜZV OL</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="exclusive-stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 40px;">
+      <div class="exclusive-stat">
+        <span class="stat-num">2K+</span>
+        <span class="stat-label">Məmnun Müştəri</span>
+      </div>
+      <div class="exclusive-stat">
+        <span class="stat-num">150+</span>
+        <span class="stat-label">Premium Məhsul</span>
+      </div>
+      <div class="exclusive-stat">
+        <span class="stat-num">45</span>
+        <span class="stat-label">Gün İadə</span>
+      </div>
+      <div class="exclusive-stat">
+        <span class="stat-num">24/7</span>
+        <span class="stat-label">Dəstək Xidməti</span>
+      </div>
+    </div>
   </div>
 </section>
 

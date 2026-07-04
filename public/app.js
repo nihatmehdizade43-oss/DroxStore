@@ -974,15 +974,15 @@ function switchUserTab(tab) {
   if(r) r.style.display = 'none';
   if(f) f.style.display = 'none';
   
-  if(tl) { tl.style.backgroundColor = 'transparent'; tl.style.borderColor = 'var(--border)'; }
-  if(tr) { tr.style.backgroundColor = 'transparent'; tr.style.borderColor = 'var(--border)'; }
+  tl?.classList.remove('active');
+  tr?.classList.remove('active');
 
   if(tab === 'login') {
     if(l) l.style.display = 'flex';
-    if(tl) { tl.style.backgroundColor = 'rgba(255,255,255,0.05)'; tl.style.borderColor = 'var(--accent)'; }
+    tl?.classList.add('active');
   } else if (tab === 'register') {
     if(r) r.style.display = 'flex';
-    if(tr) { tr.style.backgroundColor = 'rgba(255,255,255,0.05)'; tr.style.borderColor = 'var(--accent)'; }
+    tr?.classList.add('active');
   } else if (tab === 'forgot') {
     if(f) f.style.display = 'flex';
   }
@@ -1075,7 +1075,7 @@ async function handleGoogleLogin() {
   
   btn.disabled = true; 
   btn.style.opacity = '0.6';
-  btn.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;gap:10px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Yönlendiriliyor...</span>';
+  btn.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;gap:10px;"><svg class="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="40 10"/><path d="M12 6v6l4 2"/></svg> Giriş yapılıyor...</span>';
   
   try {
     if (typeof firebase === 'undefined' || !firebase.auth) {
@@ -1086,29 +1086,42 @@ async function handleGoogleLogin() {
     
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ 
-      prompt: 'select_account',
-      display: 'popup'
+      prompt: 'select_account'
     });
     
-    // Redirect metodu — mobil + tüm tarayıcılar için en güvenilir
-    await firebase.auth().signInWithRedirect(provider);
-    // Bu noktadan sonra sayfa yönlendirilir
+    // Mobil ve masaüstü uyumlu Popup ile Giriş
+    const result = await firebase.auth().signInWithPopup(provider);
+    if (result && result.user) {
+      await syncFirebaseUserWithBackend(result.user, result.user.displayName);
+      showToast(`Hoş geldin, ${result.user.displayName}! 🎉`);
+      refreshUserUI();
+      closeUserDrawer();
+    }
   } catch (err) {
     console.error('Google Auth Error:', err);
     
-    // Özel hata mesajları
-    let message = 'Google girişi başarısız.';
-    if (err.code === 'auth/unauthorized-domain') {
-      message = '⚠️ Domain yetkilendirilmemiş. Firebase Console\'da droxstore.onrender.com eklemelisiniz.';
-    } else if (err.code === 'auth/popup-blocked') {
-      message = 'Popup engellendi. Lütfen tarayıcınızın popup ayarlarını kontrol edin.';
-    } else if (err.code === 'auth/cancelled-popup-request') {
-      message = 'Giriş işlemi iptal edildi.';
-    } else if (err.message) {
-      message = err.message;
+    // Eğer popup engellendiyse redirect fallback kullan
+    if (err.code === 'auth/popup-blocked') {
+      showToast('Popup engellendi, yönlendiriliyorsunuz...');
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithRedirect(provider);
+        return; // Sayfa yönlenecek
+      } catch (redirErr) {
+        console.error('Redirect Auth Error:', redirErr);
+        showToast('Giriş başarısız oldu.');
+      }
+    } else {
+      let message = 'Google girişi başarısız.';
+      if (err.code === 'auth/unauthorized-domain') {
+        message = '⚠️ Domain yetkilendirilmemiş. Firebase Console\'da bu domaini eklemelisiniz.';
+      } else if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
+        message = 'Giriş işlemi iptal edildi.';
+      } else if (err.message) {
+        message = err.message;
+      }
+      showToast(message);
     }
-    
-    showToast(message);
     resetGoogleButton(btn);
   }
 }

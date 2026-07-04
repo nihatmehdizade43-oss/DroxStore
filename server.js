@@ -279,7 +279,7 @@ app.post('/api/settings', [checkDb, authenticateToken], async (req, res) => {
 app.get('/api/discounts', async (req, res) => {
   try {
     if (db) {
-      const snapshot = await db.collection('discounts').get();
+      const snapshot = await db.collection('discounts').orderBy('createdAt', 'desc').get();
       return res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }
     res.json([]);
@@ -500,18 +500,7 @@ app.get('/api/stats', [checkDb, authenticateToken], async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: DISCOUNTS (FIREBASE) ════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
-app.get('/api/discounts', checkDb, async (req, res) => {
-  try {
-    const snapshot = await db.collection('discounts').orderBy('createdAt', 'desc').get();
-    const discounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.json(discounts);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+
 
 app.post('/api/discounts', [checkDb, authenticateToken], async (req, res) => {
   try {
@@ -555,36 +544,7 @@ app.delete('/api/discounts/:id', [checkDb, authenticateToken], async (req, res) 
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: SETTINGS (FIREBASE) ═════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
-app.get('/api/settings', checkDb, async (req, res) => {
-  try {
-    const docRef = db.collection('settings').doc('general');
-    const doc = await docRef.get();
-    if (!doc.exists) {
-      const defaults = { 
-        vipThreshold: 20000, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8,
-        printfulToken: '', usdToTlRate: 33.0, printfulMargin: 50
-      };
-      await docRef.set(defaults);
-      return res.json(defaults);
-    }
-    res.json(doc.data());
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
-app.post('/api/settings', [checkDb, authenticateToken], async (req, res) => {
-  try {
-    const newSettings = req.body;
-    await db.collection('settings').doc('general').set(newSettings, { merge: true });
-    res.json({ success: true, settings: newSettings });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // ═══════════════════════════════════════════════════════════════
 // ═══ API: PRINTFUL INTEGRATION ════════════════════════════════
@@ -904,15 +864,6 @@ app.get('/api/payment/status/:orderId', checkDb, async (req, res) => {
   }
 });
 
-// ─── Catch-all: SPA fallback ─────────────────────────────────────
-app.get('/{*splat}', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-if (require.main === module) {
-  app.listen(PORT, () => console.log(`🚀 DroxStore Cloud Server running on port ${PORT}`));
-}
-module.exports = app;
 // --- SUPPORT TICKETS API ---
 let supportTickets = [];
 app.post('/api/support/ticket', (req, res) => {
@@ -927,3 +878,18 @@ app.delete('/api/support/tickets/:id', (req, res) => {
   supportTickets = supportTickets.filter(t => t.id !== req.params.id);
   res.json({ success: true });
 });
+
+// ─── Catch-all: SPA fallback (Express 5 compatible) ──────────────
+app.use((req, res, next) => {
+  // Only serve index.html for non-API GET requests (SPA routing)
+  if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    next();
+  }
+});
+
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`🚀 DroxStore Cloud Server running on port ${PORT}`));
+}
+module.exports = app;

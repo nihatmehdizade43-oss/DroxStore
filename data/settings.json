@@ -1,0 +1,8 @@
+{
+  "vipThreshold": 500,
+  "qtyDiscountTarget": 3,
+  "qtyDiscountPercent": 10,
+  "dateDiscountPercent": 8,
+  "printfulToken": "cR7OKCUbrIOzeYuL3RMOUM6LAUYsxP28dR0leVVc",
+  "printfulMargin": 50
+}

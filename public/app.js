@@ -1041,7 +1041,11 @@ async function handleUserRegister(e) {
     document.getElementById('rEmail').value = '';
     document.getElementById('rPass').value = '';
   } catch(err) {
-    showToast('Qeydiyyat xətası: ' + err.message);
+    let errMsg = err.message;
+    if (err.code === 'auth/email-already-in-use') errMsg = 'Bu e-poçt ilə artıq hesab mövcuddur.';
+    else if (err.code === 'auth/invalid-email') errMsg = 'E-poçt ünvanı düzgün deyil.';
+    else if (err.code === 'auth/weak-password') errMsg = 'Şifrə çox zəifdir (ən azı 6 simvol olmalıdır).';
+    showToast('Qeydiyyat xətası: ' + errMsg);
   } finally {
     btn.disabled = false; btn.textContent = 'Hesab Yarat';
   }
@@ -1075,7 +1079,13 @@ async function handleUserLogin(e) {
     showToast('Uğurla giriş etdiniz! 🎉');
     closeUserDrawer();
   } catch(err) {
-    showToast('Giriş xətası: ' + err.message);
+    let errMsg = err.message;
+    if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+      errMsg = 'E-poçt və ya şifrə yanlışdır.';
+    } else if (err.code === 'auth/invalid-email') {
+      errMsg = 'E-poçt ünvanı düzgün deyil.';
+    }
+    showToast('Giriş xətası: ' + errMsg);
   } finally {
     btn.disabled = false; btn.textContent = 'Giriş Yap';
   }

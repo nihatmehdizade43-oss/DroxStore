@@ -999,7 +999,7 @@ async function handleGoogleLogin() {
     }
   } catch (err) {
     console.error('Google Auth Error:', err);
-    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
       showToast('Yönləndirilirsiniz, zəhmət olmasa gözləyin...');
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -1032,14 +1032,17 @@ async function handleUserRegister(e) {
     const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await result.user.updateProfile({ displayName: name });
     
-    // Auto-login instantly after registration
-    await syncFirebaseUserWithBackend(result.user, name);
-    showToast('Qeydiyyat uğurludur və giriş edildi! 🎉');
-    closeUserDrawer();
+    // Email Verification Logic
+    await result.user.sendEmailVerification();
+    await firebase.auth().signOut(); // Prevent auto-login
+    
+    showToast('Qeydiyyat uğurludur! E-poçtunuza təsdiq mesajı göndərildi. Zəhmət olmasa, təsdiqlədikdən sonra giriş edin. ✉️');
     
     document.getElementById('rName').value = '';
     document.getElementById('rEmail').value = '';
     document.getElementById('rPass').value = '';
+    
+    switchUserTab('login');
   } catch(err) {
     showToast('Qeydiyyat xətası: ' + err.message);
   } finally {
@@ -1070,6 +1073,15 @@ async function handleUserLogin(e) {
   btn.disabled = true; btn.textContent = 'Giriş edilir...';
   try {
     const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+    
+    // Email Verification Check
+    if (!result.user.emailVerified) {
+      await firebase.auth().signOut();
+      showToast('Giriş xətası: Zəhmət olmasa e-poçt ünvanınızı təsdiqləyin!');
+      btn.disabled = false; btn.textContent = 'Giriş Yap';
+      return;
+    }
+    
     await syncFirebaseUserWithBackend(result.user, result.user.displayName);
     showToast('Uğurla giriş etdiniz! 🎉');
     closeUserDrawer();
@@ -1211,6 +1223,32 @@ async function refreshAdminPanel() {
           <button onclick="deleteDiscount('${d.id}')">Sil</button>
         </div>
       `}).join('');
+    }
+
+    // Customers List
+    const cList = document.getElementById('adminCustomersList');
+    if (cList) {
+      try {
+        const customers = await API.authAction('/api/admin/customers', 'GET');
+        if (customers.length === 0) {
+          cList.innerHTML = '<p style="color:#888;">Heç bir müştəri tapılmadı.</p>';
+        } else {
+          cList.innerHTML = customers.map(c => {
+            const dateStr = c.createdAt?._seconds ? new Date(c.createdAt._seconds * 1000).toLocaleDateString('az-AZ') : 'Tarix yoxdur';
+            return `
+              <div class="order-card" style="margin-bottom:10px;">
+                <div class="order-header">
+                  <span>${c.name}</span>
+                  <span style="color:#888; font-size:12px;">Qeydiyyat: ${dateStr}</span>
+                </div>
+                <div class="order-items">📧 ${c.email}</div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        cList.innerHTML = '<p style="color:red;">Müştəriləri yükləmək mümkün olmadı.</p>';
+      }
     }
 
     // System Settings Populate

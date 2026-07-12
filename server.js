@@ -205,6 +205,28 @@ app.post('/api/customers/sync', [checkDb, authenticateFirebaseToken], async (req
   }
 });
 
+// ─── API: ADMIN CUSTOMERS ───────────────────────────────────────
+app.get('/api/admin/customers', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    if (db) {
+      const snapshot = await db.collection('customers').orderBy('createdAt', 'desc').get();
+      const customers = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          email: data.email,
+          name: data.name,
+          createdAt: data.createdAt
+        };
+      });
+      return res.json(customers);
+    }
+    res.json([]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── DATA FALLBACK (Local JSON) ──────────────────────────────────
 const CATEGORIES_PATH = path.join(__dirname, 'data', 'categories.json');
 const PRODUCTS_PATH = path.join(__dirname, 'data', 'products.json');

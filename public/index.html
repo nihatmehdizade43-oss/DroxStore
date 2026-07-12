@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="az">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DROXSTORE — Premium Apparel</title>
-<meta name="description" content="DroxStore - Premium kalite giyim mağazası. T-Shirt, Hoodie, Sweatshirt ve daha fazlası.">
+<title>DROX STORE — Premium Geyim</title>
+<meta name="description" content="DroxStore - Premium keyfiyyətli geyim mağazası. T-Shirt, Hoodie, Sweatshirt və daha çoxu.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-/* Admin Pro Styles (Inline for priority) */
-.admin-side-nav { display: flex; gap: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; padding-bottom: 12px; }
-.admin-tab { cursor: pointer; opacity: 0.6; font-family: var(--font-ui); font-weight: 600; font-size: 14px; transition: 0.3s; }
+/* Admin Pro Styles */
+.admin-side-nav { display: flex; gap: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; padding-bottom: 12px; overflow-x: auto; }
+.admin-tab { cursor: pointer; opacity: 0.6; font-family: var(--font-ui); font-weight: 600; font-size: 14px; transition: 0.3s; white-space: nowrap; }
 .admin-tab.active { opacity: 1; color: var(--accent); }
 .admin-tab-content { display: none; }
 .admin-tab-content.active { display: block; }
@@ -31,10 +31,9 @@
 .order-header { display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--accent); font-weight: bold; }
 .order-items { margin-top: 10px; font-size: 13px; color: #ccc; }
 
-/* Checkout Modal */
+/* Checkout Modal (Custom adjustments) */
 .checkout-fields { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
 .checkout-fields input, .checkout-fields textarea { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: white; border-radius: 8px; font-family: inherit; }
-
 
 .cat-manage-list { display: flex; flex-direction: column; gap: 10px; }
 .cat-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 12px 20px; border-radius: 12px; }
@@ -64,6 +63,8 @@
 .rating-input label { font-size: 24px; color: #444; cursor: pointer; transition: 0.2s; }
 .rating-input label:hover, .rating-input label:hover ~ label, .rating-input input:checked ~ label { color: #facc15; }
 
+/* Custom Badge Count Style */
+.cart-count { display: flex; align-items: center; justify-content: center; position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); color: #000; font-size: 10px; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -85,25 +86,34 @@
   <div class="nav-left">
     <a href="/" class="logo">DROX<span>STORE</span></a>
     <div class="nav-links">
-      <a href="#home" class="nav-link">Ana Sayfa</a>
-      <a href="#products" class="nav-link">Koleksiyon</a>
-      <a href="#about" class="nav-link">Hakkımızda</a>
-      <a href="#contact" class="nav-link">İletişim</a>
+      <a href="#home" class="nav-link">Ana Səhifə</a>
+      <a href="#products" class="nav-link">Kolleksiya</a>
+      <a href="#about" class="nav-link">Haqqımızda</a>
+      <a href="#contact" class="nav-link">Əlaqə</a>
     </div>
   </div>
 
   <div class="search-container">
     <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-    <input type="text" class="search-input" id="searchInput" placeholder="Ürün ara...">
+    <input type="text" class="search-input" id="searchInput" placeholder="Məhsul axtar...">
     <div class="search-results" id="searchResults"></div>
   </div>
 
   <div class="nav-right">
-    <a href="#" class="nav-link" onclick="event.preventDefault(); openPromotions()">Kampanyalar</a>
+    <a href="#" class="nav-link" onclick="event.preventDefault(); openPromotions()">Kampaniyalar</a>
     <div class="nav-actions">
+      <!-- Bildiriş düyməsi -->
+      <button class="cart-btn" id="notifBtn" onclick="openNotifications()" style="position:relative;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="cart-count" id="notifCount" style="display:none;">0</span>
+      </button>
+      
+      <!-- Profil düyməsi -->
       <button class="cart-btn" id="userBtn" onclick="openUserDrawer()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </button>
+
+      <!-- Səbət düyməsi -->
       <button class="cart-btn" id="cartBtn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="cart-count" id="cartCount">0</span>
@@ -116,207 +126,178 @@
 <div id="home-view" class="app-view active-view">
   <!-- HERO -->
   <section class="hero">
-  <div class="hero-bg">
-    <!-- Optional: video background for true premium feel, but we'll use a premium image for now -->
-    <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop" style="width:100%; height:100%; object-fit:cover; opacity:0.4; filter:grayscale(100%) contrast(1.2);" alt="Premium Apparel">
-    <div class="hero-grid"></div>
-    <div class="noise"></div>
-  </div>
-  <div class="hero-content">
-    <div class="hero-manifesto" style="font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); margin-bottom: 32px; border-left: 2px solid var(--accent); padding-left: 20px; max-width: 500px; line-height: 1.6;">
-      EST. 2026 — PREMIUM LÜKSÜN YENİ TANIMI.
+    <div class="hero-bg">
+      <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop" style="width:100%; height:100%; object-fit:cover; opacity:0.4; filter:grayscale(100%) contrast(1.2);" alt="Premium Geyim">
+      <div class="hero-grid"></div>
+      <div class="noise"></div>
     </div>
-    <h1 class="hero-title">
-      <span class="line">PREMIUM</span>
-      <span class="line typewriter" style="color:var(--accent);">APPAREL</span>
-      <span class="line">COLLECTION</span>
-    </h1>
-    <p class="hero-sub">DroxStore ile sınırları zorlayın. En saf kalite, eşsiz tasarımlar ve sürdürülebilir lüks moda anlayışı.</p>
-    <div class="hero-actions">
-      <a href="#products" class="btn-primary" onclick="setProductFilter('all', document.querySelector('.filter-btn'))">Koleksiyonu Keşfet <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a>
-      <a href="#" class="btn-ghost" onclick="event.preventDefault(); openLookbook()">2026 Lookbook →</a>
+    <div class="hero-content">
+      <div class="hero-manifesto" style="font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); margin-bottom: 32px; border-left: 2px solid var(--accent); padding-left: 20px; max-width: 500px; line-height: 1.6;">
+        EST. 2026 — PREMİUM DƏBİN YENİ ÜNVANI.
+      </div>
+      <h1 class="hero-title">
+        <span class="line">PREMIUM</span>
+        <span class="line typewriter" style="color:var(--accent);">APPAREL</span>
+        <span class="line">COLLECTION</span>
+      </h1>
+      <p class="hero-sub">DroxStore ilə sərhədləri aşın. Ən təmiz keyfiyyət, bənzərsiz dizaynlar və lüks moda anlayışı.</p>
+      <div class="hero-actions">
+        <a href="#products" class="btn-primary" onclick="setProductFilter('all', document.querySelector('.filter-btn'))">Kolleksiyanı Kəşf Et <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a>
+        <a href="#" class="btn-ghost" onclick="event.preventDefault(); openLookbook()">2026 Lookbook →</a>
+      </div>
     </div>
-  </div>
-  <div class="hero-scroll"><span>AŞAĞI KAYDIR</span><div class="scroll-line"></div></div>
-</section>
+    <div class="hero-scroll"><span>AŞAĞI ENİN</span><div class="scroll-line"></div></div>
+  </section>
 
-<!-- TRUST BAR -->
-<section class="features" style="background: var(--bg); padding: 60px 48px;">
-  <div class="feat-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-    <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
-      <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+  <!-- TRUST BAR -->
+  <section class="features" style="background: var(--bg); padding: 60px 48px;">
+    <div class="feat-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
+        <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+        </div>
+        <h4 style="font-size: 14px; margin-bottom: 4px;">Sürətli Çatdırılma</h4>
+        <p style="font-size: 12px; color: var(--text-dim);">Ölkə daxili sürətli kuryer və poçt.</p>
       </div>
-      <h4 style="font-size: 14px; margin-bottom: 4px;">Hızlı Teslimat</h4>
-      <p style="font-size: 12px; color: var(--text-dim);">Tüm Türkiye'ye 24 saatte kargo.</p>
-    </div>
-    <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
-      <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      
+      <!-- WhatsApp Sifariş Trust Item -->
+      <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
+        <div class="feat-icon" style="background: rgba(37,211,102,0.1); width: 48px; height: 48px; margin-bottom: 16px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </div>
+        <h4 style="font-size: 14px; margin-bottom: 4px;">WhatsApp Sifariş</h4>
+        <p style="font-size: 12px; color: var(--text-dim);">Birbaşa WhatsApp ilə rahat və güvənli sifariş.</p>
       </div>
-      <h4 style="font-size: 14px; margin-bottom: 4px;">Güvenli Ödeme</h4>
-      <p style="font-size: 12px; color: var(--text-dim);">256-bit SSL şifreleme ile koruma.</p>
-    </div>
-    <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
-      <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </div>
-      <h4 style="font-size: 14px; margin-bottom: 4px;">45 Gün İade</h4>
-      <p style="font-size: 12px; color: var(--text-dim);">Koşulsuz iade ve değişim garantisi.</p>
-    </div>
-    <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
-      <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      </div>
-      <h4 style="font-size: 14px; margin-bottom: 4px;">Premium Kalite</h4>
-      <p style="font-size: 12px; color: var(--text-dim);">En üst segment kumaş teknolojisi.</p>
-    </div>
-  </div>
-</section>
 
-<!-- MARQUEE -->
-<div class="marquee-wrap">
-  <div class="marquee-track">
-    <span>45 GÜN KOŞULSUZ İADE GARANTİSİ</span><span class="dot">✦</span>
-    <span>ULUSLARARASI KUSURSUZ TESLİMAT</span><span class="dot">✦</span>
-    <span>DROX PREMIUM KALİTESİ</span><span class="dot">✦</span>
-    <span>%100 GÜVENLİ ALIŞVERİŞ</span><span class="dot">✦</span>
-    <span>7/24 AI & MÜŞTERİ HİZMETLERİ</span><span class="dot">✦</span>
+      <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
+        <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h4 style="font-size: 14px; margin-bottom: 4px;">45 Gün Dəyişmə</h4>
+        <p style="font-size: 12px; color: var(--text-dim);">Razı qalmadığınızda asan dəyişmə imkanı.</p>
+      </div>
+      <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
+        <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h4 style="font-size: 14px; margin-bottom: 4px;">Premium Keyfiyyət</h4>
+        <p style="font-size: 12px; color: var(--text-dim);">Xüsusi seçilmiş premium geyim parçaları.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <span>45 GÜN ASAN DƏYİŞMƏ ZƏMANƏTİ</span><span class="dot">✦</span>
+      <span>SÜRƏTLİ VƏ KUSURSUZ ÇATDIRILMA</span><span class="dot">✦</span>
+      <span>DROX PREMİUM KEYFİYYƏTİ</span><span class="dot">✦</span>
+      <span>%100 MƏMNUNİYYƏT GARANTİSİ</span><span class="dot">✦</span>
+      <span>7/24 AI & MÜŞTERİ XİDMƏTLƏRİ</span><span class="dot">✦</span>
+    </div>
   </div>
+
+  <!-- EXCLUSIVE CLUB SECTION -->
+  <section class="exclusive-club" style="padding: 80px 48px; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(15,15,15,1) 0%, rgba(25,20,35,1) 50%, rgba(15,15,15,1) 100%);">
+    <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
+      <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(232,255,71,0.03) 0%, transparent 50%); animation: floatBg 15s ease-in-out infinite;"></div>
+      <div style="position: absolute; top: 20%; right: 10%; width: 300px; height: 300px; border: 1px solid rgba(232,255,71,0.06); border-radius: 50%; animation: pulse 4s ease-in-out infinite;"></div>
+    </div>
+    
+    <div style="position: relative; z-index: 1; text-align: center; max-width: 700px; margin: 0 auto;">
+      <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232,255,71,0.08); border: 1px solid rgba(232,255,71,0.15); padding: 8px 20px; border-radius: 60px; margin-bottom: 30px;">
+        <span style="width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite;"></span>
+        <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 600;">Eksklüziv Üzvlər Klubu</span>
+      </div>
+
+      <h2 style="font-family: var(--font-display); font-size: clamp(32px, 5vw, 56px); line-height: 1.1; margin-bottom: 16px; color: white;">
+        Premium Dünyaya<br><span style="color: var(--accent);">İlk Sən Daxil Ol</span>
+      </h2>
+      <p style="font-size: 15px; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Yeni kolleksiyalar, xüsusi endirimlər və limitli buraxılışlardan ilk xəbərdar olmaq üçün qeydiyyatdan keç.
+      </p>
+
+      <!-- Email Form -->
+      <div class="club-email-wrap" style="margin-bottom: 50px; position: relative; max-width: 480px; margin: 0 auto;">
+        <input type="email" placeholder="E-poçt ünvanınızı daxil edin..." id="clubEmailInput" style="width:100%; padding:18px 24px; border:1px solid rgba(232,255,71,0.15); background:rgba(255,255,255,0.03); color:white; border-radius:60px; outline:none;">
+        <button onclick="if(document.getElementById('clubEmailInput').value) { showToast('Təbriklər! Artıq DroxStore ailəsindəsiniz 🎉'); document.getElementById('clubEmailInput').value=''; } else { showToast('Zəhmət olmasa e-poçt daxil edin'); }" style="position:absolute; right:5px; top:5px; bottom:5px; background:var(--accent); color:#000; border:none; border-radius:60px; padding:0 28px; font-weight:700; cursor:pointer;">ÜZV OL</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="exclusive-stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 40px; margin-top: 40px;">
+        <div class="exclusive-stat">
+          <span class="stat-num" style="display: block; font-family: var(--font-display); font-size: 42px; color: var(--accent);">2K+</span>
+          <span class="stat-label" style="font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">Məmnun Müştəri</span>
+        </div>
+        <div class="exclusive-stat">
+          <span class="stat-num" style="display: block; font-family: var(--font-display); font-size: 42px; color: var(--accent);">150+</span>
+          <span class="stat-label" style="font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">Premium Məhsul</span>
+        </div>
+        <div class="exclusive-stat">
+          <span class="stat-num" style="display: block; font-family: var(--font-display); font-size: 42px; color: var(--accent);">45</span>
+          <span class="stat-label" style="font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">Gün Dəyişmə</span>
+        </div>
+        <div class="exclusive-stat">
+          <span class="stat-num" style="display: block; font-family: var(--font-display); font-size: 42px; color: var(--accent);">24/7</span>
+          <span class="stat-label" style="font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">AI Dəstək</span>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
-
-<!-- EXCLUSIVE CLUB SECTION -->
-<section class="exclusive-club" style="padding: 80px 48px; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(15,15,15,1) 0%, rgba(25,20,35,1) 50%, rgba(15,15,15,1) 100%);">
-  <!-- Animated background elements -->
-  <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
-    <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(232,255,71,0.03) 0%, transparent 50%); animation: floatBg 15s ease-in-out infinite;"></div>
-    <div style="position: absolute; top: 20%; right: 10%; width: 300px; height: 300px; border: 1px solid rgba(232,255,71,0.06); border-radius: 50%; animation: pulse 4s ease-in-out infinite;"></div>
-    <div style="position: absolute; bottom: 10%; left: 5%; width: 200px; height: 200px; border: 1px solid rgba(232,255,71,0.04); border-radius: 50%; animation: pulse 6s ease-in-out infinite reverse;"></div>
-  </div>
-  <style>
-    @keyframes floatBg { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(2%, -2%) rotate(1deg); } }
-    @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
-    .exclusive-stat { text-align: center; padding: 20px; }
-    .exclusive-stat .stat-num { display: block; font-family: var(--font-display); font-size: 42px; color: var(--accent); line-height: 1; margin-bottom: 6px; }
-    .exclusive-stat .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.15em; }
-    .club-email-wrap { position: relative; max-width: 480px; margin: 0 auto; }
-    .club-email-wrap input { width: 100%; padding: 18px 160px 18px 24px; border: 1px solid rgba(232,255,71,0.15); background: rgba(255,255,255,0.03); color: white; border-radius: 60px; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.3s, box-shadow 0.3s; backdrop-filter: blur(10px); }
-    .club-email-wrap input:focus { border-color: rgba(232,255,71,0.4); box-shadow: 0 0 30px rgba(232,255,71,0.08); }
-    .club-email-wrap input::placeholder { color: rgba(255,255,255,0.3); }
-    .club-email-wrap button { position: absolute; right: 5px; top: 5px; bottom: 5px; background: var(--accent); color: #000; border: none; border-radius: 60px; padding: 0 28px; font-weight: 700; font-size: 13px; cursor: pointer; letter-spacing: 0.05em; transition: transform 0.2s, box-shadow 0.2s; }
-    .club-email-wrap button:hover { transform: scale(1.03); box-shadow: 0 4px 20px rgba(232,255,71,0.3); }
-    @media (max-width: 768px) {
-      .exclusive-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
-      .club-email-wrap input { padding-right: 24px; }
-      .club-email-wrap button { position: relative; right: auto; top: auto; bottom: auto; width: 100%; margin-top: 10px; padding: 14px; border-radius: 60px; }
-      .club-email-wrap { display: flex; flex-direction: column; }
-    }
-  </style>
-
-  <div style="position: relative; z-index: 1; text-align: center; max-width: 700px; margin: 0 auto;">
-    <!-- Badge -->
-    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232,255,71,0.08); border: 1px solid rgba(232,255,71,0.15); padding: 8px 20px; border-radius: 60px; margin-bottom: 30px;">
-      <span style="width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite;"></span>
-      <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 600;">Exclusive Members Club</span>
-    </div>
-
-    <h2 style="font-family: var(--font-display); font-size: clamp(32px, 5vw, 56px); line-height: 1.1; margin-bottom: 16px; color: white;">
-      Premium Dünyaya<br><span style="color: var(--accent);">İlk Sən Daxil Ol</span>
-    </h2>
-    <p style="font-size: 15px; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;">
-      Yeni kolleksiyalar, xüsusi endirimlar və limitli buraxılışlardan ilk xəbərdar olmaq üçün qeydiyyatdan keç.
-    </p>
-
-    <!-- Email Form -->
-    <div class="club-email-wrap" style="margin-bottom: 50px;">
-      <input type="email" placeholder="E-poçt ünvanınızı daxil edin..." id="clubEmailInput">
-      <button onclick="if(document.getElementById('clubEmailInput').value) { showToast('Təbriklər! Artıq DroxStore ailəsindəsiniz 🎉'); document.getElementById('clubEmailInput').value=''; } else { showToast('Zəhmət olmasa e-poçt daxil edin'); }">ÜZV OL</button>
-    </div>
-
-    <!-- Stats -->
-    <div class="exclusive-stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 40px;">
-      <div class="exclusive-stat">
-        <span class="stat-num">2K+</span>
-        <span class="stat-label">Məmnun Müştəri</span>
-      </div>
-      <div class="exclusive-stat">
-        <span class="stat-num">150+</span>
-        <span class="stat-label">Premium Məhsul</span>
-      </div>
-      <div class="exclusive-stat">
-        <span class="stat-num">45</span>
-        <span class="stat-label">Gün İadə</span>
-      </div>
-      <div class="exclusive-stat">
-        <span class="stat-num">24/7</span>
-        <span class="stat-label">Dəstək Xidməti</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-</div> <!-- END HOME VIEW -->
 
 <!-- CATEGORIES SECT -->
 <section class="categories app-view" id="catSection">
   <div class="section-header">
-    <span class="section-tag">KEŞFET</span>
-    <h2>Koleksiyonlar</h2>
+    <span class="section-tag">KƏŞF ET</span>
+    <h2>Kolleksiyalar</h2>
   </div>
-  <div class="cat-grid" id="catGridArea">
-    <!-- Categories injected by JS -->
-  </div>
+  <div class="cat-grid" id="catGridArea"></div>
 </section>
 
 <!-- PRODUCTS VIEW -->
 <section class="products app-view" id="products">
   <div class="section-header">
-    <span class="section-tag">ÜRÜNLER</span>
-    <h2>Tüm Parçalar</h2>
+    <span class="section-tag">MƏHSULLAR</span>
+    <h2>Bütün Parçalar</h2>
   </div>
   <div class="filter-bar" id="productFilters">
-    <button class="filter-btn active" data-cat="all">Tümü</button>
-    <!-- Dynamic filters injected here -->
+    <button class="filter-btn active" data-cat="all">Hamısı</button>
   </div>
   <div class="product-grid" id="productGrid"></div>
   <div class="empty-store" id="emptyStore" style="display:none;">
     <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8">
       <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
     </svg>
-    <h3>Mağaza Şu An Boş</h3>
-    <p>Admin panelinden ürün ekleyerek başlayın.</p>
+    <h3>Mağaza Hal-hazırda Boşdur</h3>
+    <p>Admin panelindən məhsul əlavə edərək başlayın.</p>
   </div>
 </section>
 
 <!-- ABOUT VIEW -->
 <section class="app-view" id="about-view" style="padding: 100px 48px; min-height: 80vh;">
   <div class="section-header">
-    <span class="section-tag">HAKKIMIZDA</span>
-    <h2>Marka Hikayesi</h2>
+    <span class="section-tag">HAQQIMIZDA</span>
+    <h2>Marka Hekayəsi</h2>
   </div>
   <div style="max-width: 800px; margin: 0 auto; line-height: 1.8; color: var(--text-dim); text-align: center;">
     <p style="margin-bottom: 20px; font-size: 24px; color: white;">DroxStore — Premium Geyim</p>
-    <p>16 yaşlı gənc sahibkarın layihəsi.</p>
-    <p style="margin-top: 30px; font-weight: bold; color: var(--accent);">Nihat Mehdizade — Founder</p>
-    <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
-      <a href="#" style="color: white; text-decoration: none;">Instagram</a>
-      <a href="#" style="color: white; text-decoration: none;">TikTok</a>
-    </div>
+    <p>Modern lüksün və premium küçə dəbinin mükəmməl birləşməsi.</p>
+    <p style="margin-top: 30px; font-weight: bold; color: var(--accent);">Nihat Mehdizadə — Founder</p>
   </div>
 </section>
-
 
 <!-- CONTACT VIEW -->
 <section class="app-view" id="contact-view" style="padding: 100px 48px; min-height: 80vh;">
   <div class="section-header">
-    <span class="section-tag">İLETİŞİM</span>
-    <h2>Bize Ulaşın</h2>
+    <span class="section-tag">ƏLAQƏ</span>
+    <h2>Bizə Yazın</h2>
   </div>
   <div class="checkout-fields" style="max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.03); padding: 40px; border-radius: 20px; border: 1px solid var(--border);">
     <input type="text" placeholder="Adınız Soyadınız">
-    <input type="email" placeholder="E-Posta Adresiniz">
+    <input type="email" placeholder="E-poçt Ünvanınız">
     <textarea rows="4" placeholder="Mesajınız"></textarea>
-    <button class="btn-primary full" style="margin-top: 15px;" onclick="showToast('Mesajınız gönderildi. En kısa sürede dönüş yapılacaktır.')">Gönder</button>
+    <button class="btn-primary full" style="margin-top: 15px;" onclick="showToast('Mesajınız göndərildi. Ən qısa zamanda geri dönüş ediləcək.')">Göndər</button>
   </div>
 </section>
 
@@ -324,53 +305,25 @@
 <footer class="footer">
   <div class="footer-top">
     <div class="footer-brand">
-      <a href="/" class="logo-foot">DROX<em>STORE</em></a>
-      <p>Modern lüksün ve sokak modasının kusursuz birleşimi. 2026'dan beri en iyisi için buradayız.</p>
-      <div class="social-links">
-        <a href="#" class="social-link">IG</a>
-        <a href="#" class="social-link">TW</a>
-        <a href="#" class="social-link">TK</a>
-      </div>
+      <a href="/" class="logo-foot">DROX<span>STORE</span></a>
+      <p>Modern lüksün və sokak modasının qüsursuz birləşməsi. 2026-cı ildən bəri sizinləyik.</p>
     </div>
     <div class="footer-links">
       <div class="footer-col">
         <h5>MAĞAZA</h5>
-        <a href="#products">Tüm Ürünler</a>
-        <a href="#about">Hakkımızda</a>
-        <a href="#contact">İletişim</a>
+        <a href="#products">Məhsullar</a>
+        <a href="#about">Haqqımızda</a>
+        <a href="#contact">Əlaqə</a>
       </div>
       <div class="footer-col">
-        <h5>DESTEK</h5>
-        <a href="/terms.html">Kullanım Koşulları</a>
-        <a href="/privacy.html">Gizlilik Politikası</a>
-        <a href="/refund.html">İade ve Değişim</a>
-      </div>
-      <div class="footer-col">
-        <h5>SÖZLEŞMELER</h5>
-        <a href="/distance-selling.html">Mesafeli Satış</a>
-        <a href="/shipping.html">Teslimat Politikası</a>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <a href="mailto:nihatmehdizade43@gmail.com" style="color: var(--accent); font-weight: 700;">nihatmehdizade43@gmail.com</a>
-          <a href="tel:+994553229166" style="color: #ccc; font-size: 13px; font-weight: 500; text-decoration: none; transition: 0.3s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='#ccc'">+994 55 322 91 66</a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h5>BÜLTEN</h5>
-        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">Özel droplardan ve kampanyalardan haberdar olun.</p>
-        <div style="position: relative;">
-          <input type="email" placeholder="E-Posta Adresiniz" style="width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); color: white; outline: none; transition: border-color 0.3s;">
-          <button style="position: absolute; right: 4px; top: 4px; bottom: 4px; background: var(--accent); color: black; border: none; border-radius: 6px; padding: 0 16px; font-weight: bold; cursor: pointer;">KAYIT OL</button>
-        </div>
+        <h5>ƏLAQƏ DETALLARI</h5>
+        <a href="mailto:nihatmehdizade43@gmail.com" style="color: var(--accent); font-weight: 700;">nihatmehdizade43@gmail.com</a>
+        <a href="tel:+994553229166" style="color: #ccc; font-size: 13px; font-weight: 500; text-decoration: none;">+994 55 322 91 66</a>
       </div>
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2026 DroxStore v3.0 Premium. Tüm hakları saklıdır.</span>
-    <div class="payment-icons">
-      <span class="pay-icon">VISA</span>
-      <span class="pay-icon">MASTERCARD</span>
-      <span class="pay-icon">PAYRIFF</span>
-    </div>
+    <span>© 2026 DroxStore Premium. Bütün hüquqlar qorunur.</span>
   </div>
 </footer>
 
@@ -378,13 +331,14 @@
 <div class="cart-overlay" id="cartOverlay"></div>
 <div class="cart-drawer" id="cartDrawer">
   <div class="cart-header">
-    <h3>Sepetim (<span id="cartItemCount">0</span>)</h3>
+    <h3>Səbətim (<span id="cartItemCount">0</span>)</h3>
     <button class="modal-close" id="cartClose" onclick="closeCart()">✕</button>
   </div>
   <div class="cart-items" id="cartItems"></div>
   <div class="cart-footer">
-    <div class="cart-total"><span>Toplam</span><span id="cartTotal">$0</span></div>
-    <button class="btn-primary full" onclick="openCheckout()">Ödemeye Geç</button>
+    <div class="cart-total"><span>Cəmi</span><span id="cartTotal">0 AZN</span></div>
+    <!-- Sepette Payriff Ödeme Yerine WhatsApp Sipariş Butonu -->
+    <button class="btn-primary full" onclick="orderViaWhatsApp()" style="background: #25D366; font-weight: bold;">📱 WhatsApp ilə Sifariş Et</button>
   </div>
 </div>
 
@@ -392,79 +346,6 @@
   <div class="product-modal" id="productModal">
     <button class="modal-close" id="modalClose" onclick="closeModal()" style="position: absolute; top: 20px; right: 20px; z-index: 10;">✕</button>
     <div class="modal-content" id="modalContent"></div>
-  </div>
-</div>
-
-<!-- CHECKOUT MODAL -->
-<div class="modal-overlay" id="checkoutOverlay">
-  <div class="product-modal checkout-modal" style="max-width: 1000px;">
-    <button class="modal-close" onclick="closeCheckout()" style="position: absolute; top: 20px; right: 20px; z-index: 10;">✕</button>
-    <div class="checkout-layout">
-      <div class="checkout-left">
-        <div class="checkout-form-section">
-          <h3>1. Teslimat Bilgileri</h3>
-          <div class="checkout-fields" style="background: rgba(255,255,255,0.01); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-            <!-- İletişim -->
-            <div style="font-size: 11px; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 5px; text-transform: uppercase;">A. İletişim</div>
-            <input type="text" id="chkName" placeholder="Adınız Soyadınız" required>
-            <div style="display:flex; gap:10px;">
-              <input type="email" id="chkEmail" placeholder="E-Posta Adresiniz" required style="flex:1;">
-              <input type="tel" id="chkPhone" placeholder="Cep Telefonunuz" required style="flex:1;">
-            </div>
-            
-            <!-- Konum -->
-            <div style="font-size: 11px; color: var(--accent); letter-spacing: 0.1em; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase;">B. Konum Detayları</div>
-            <div style="display:flex; gap:10px;">
-              <button class="btn-ghost" type="button" onclick="findLocation()" style="border:1px solid var(--accent); padding:0 12px; border-radius:8px; color:var(--accent); font-size:16px;" title="Konumumu Bul">📍</button>
-              <input type="text" id="chkCountry" placeholder="Ülke" required style="flex:1;">
-              <input type="text" id="chkCity" placeholder="Şehir / İl" required style="flex:1;">
-              <input type="text" id="chkZip" placeholder="Posta Kodu" required style="flex:1;">
-            </div>
-            <input type="text" id="chkLine1" placeholder="Adres Satırı 1 (Sokak, Mahalle, Bina No)" required>
-            <input type="text" id="chkLine2" placeholder="Adres Satırı 2 (Daire No, Kat vb.)">
-          </div>
-        </div>
-      </div>
-      <!-- Sağ: Ödeme ve Kart -->
-      <div class="checkout-right">
-        <h2 style="font-family: Bebas Neue; font-size:32px; letter-spacing:2px; margin-bottom: 10px;">ÖDEME YÖNTEMİ</h2>
-
-        <!-- Payriff Ödeme Bilgisi -->
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; margin-bottom: 20px; text-align: center;">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
-            <div style="width: 48px; height: 48px; background: rgba(232,255,71,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🔒</div>
-            <div style="text-align: left;">
-              <div style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;">Payriff ile Güvenli Ödeme</div>
-              <div style="font-size: 12px; color: #888; margin-top: 2px;">Visa · Mastercard · Kapıda Ödeme</div>
-            </div>
-          </div>
-          <p style="font-size: 12px; color: #666; line-height: 1.6;">
-            "Siparişi Onayla" butonuna tıkladığınızda güvenli Payriff ödeme sayfasına yönlendirileceksiniz. Kart bilgileriniz yalnızca Payriff altyapısında işlenir.
-          </p>
-          <div style="display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap;">
-            <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #aaa;">VISA</span>
-            <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #aaa;">MASTERCARD</span>
-            <span style="background: rgba(232,255,71,0.1); border: 1px solid rgba(232,255,71,0.2); padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; color: var(--accent);">PAYRIFF</span>
-          </div>
-        </div>
-
-        <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-          <div style="display: flex; gap: 10px;">
-            <input type="text" id="chkPromoCode" placeholder="İndirim Kodu" style="flex:1; padding: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: white; border-radius: 8px; font-family: inherit; text-transform: uppercase;">
-            <button class="btn-ghost" style="padding: 0 15px; border: 1px solid var(--accent); color: var(--accent); border-radius: 8px;" onclick="applyPromoCode()">Uygula</button>
-          </div>
-          <div id="promoMessage" style="font-size: 12px; margin-top: 5px; color: #ff4d4d; display: none;"></div>
-          <div id="discountSummary" style="font-size: 13px; margin-top: 10px; color: #4ade80; display: none;"></div>
-        </div>
-
-        <button type="button" class="btn-primary full chk-submit-btn" id="chkSubmitBtn" onclick="processCheckout()" style="margin-top:15px; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-          <span>Payriff ile Öde</span>
-          <span style="opacity:0.7;">·</span>
-          <span id="chkBtnTotal">$0</span>
-        </button>
-        <p style="text-align:center; font-size:11px; color:#555; margin-top:8px;">SSL şifreli güvenli bağlantı</p>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -488,23 +369,24 @@
   <div class="product-modal" style="max-width: 500px;">
     <button class="modal-close" onclick="closePromotions()">✕</button>
     <div class="modal-body">
-      <h2 style="font-family: Bebas Neue; font-size:32px; text-align:center; letter-spacing:2px; margin-bottom: 20px; color: var(--accent);">AKTİF KAMPANYALAR</h2>
-      
+      <h2 style="font-family: Bebas Neue; font-size:32px; text-align:center; letter-spacing:2px; margin-bottom: 20px; color: var(--accent);">AKTİF KAMPANİYALAR</h2>
       <div style="background: rgba(255,255,255,0.05); border-left: 4px solid var(--accent); padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;">
-        <h4 style="margin: 0 0 5px 0;">🎁 İlk 3 Ürüne Özel!</h4>
-        <p style="margin: 0; font-size: 13px; color: #ccc;">Sepetinize en az 3 ürün ekleyin, anında %10 indirim kazanın. (Otomatik uygulanır)</p>
-      </div>
-
-      <div style="background: rgba(255,255,255,0.05); border-left: 4px solid #ff416c; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
-        <h4 style="margin: 0 0 5px 0;">📅 Ayın 8'i İndirimi</h4>
-        <p style="margin: 0; font-size: 13px; color: #ccc;">Her ayın 8'inde tüm alışverişlerinizde kasada %8 ekstra indirim. (Otomatik uygulanır)</p>
-      </div>
-
-      <h3 style="font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">Geçerli İndirim Kodları (Çekilişler)</h3>
-      <div id="publicDiscountsList" style="display: flex; flex-direction: column; gap: 10px;">
-        <!-- JS iterates public codes here -->
+        <h4 style="margin: 0 0 5px 0;">🎁 Eksklüziv Kampaniyalar!</h4>
+        <p style="margin: 0; font-size: 13px; color: #ccc;">Yeni məhsullar və endirimlərdən anında bildiriş alacaqsınız.</p>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- BİLDİRİŞLƏR PANELİ (DRAWER) -->
+<div class="cart-overlay" id="notifOverlay"></div>
+<div class="cart-drawer" id="notifDrawer">
+  <div class="cart-header">
+    <h3>Bildirişlər</h3>
+    <button class="modal-close" onclick="closeNotifications()">✕</button>
+  </div>
+  <div class="cart-items" id="notifList" style="padding: 15px;">
+    <!-- Bildirişlər bura yüklənəcək -->
   </div>
 </div>
 
@@ -518,72 +400,52 @@
   <div class="cart-items" style="padding-top:30px;" id="userDrawerBody">
     <div id="userLoggedOut">
       <!-- Premium Auth Tabs -->
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tabLogin" onclick="switchUserTab('login')">GİRİŞ YAP</button>
-        <button class="auth-tab" id="tabRegister" onclick="switchUserTab('register')">KAYIT OL</button>
+      <div class="auth-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <button class="auth-tab active" id="tabLogin" onclick="switchUserTab('login')" style="flex:1; background:none; border:none; color:white; font-weight:bold; cursor:pointer;">GİRİŞ YAP</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchUserTab('register')" style="flex:1; background:none; border:none; color:white; font-weight:bold; cursor:pointer; opacity:0.6;">QEYDİYYAT</button>
       </div>
 
-      <!-- Premium Google Auth Button -->
-      <button class="google-btn" id="btnGoogleLogin" onclick="handleGoogleLogin()">
+      <!-- Google Auth Button -->
+      <button class="google-btn" id="btnGoogleLogin" onclick="handleGoogleLogin()" style="width:100%; padding:12px; background:white; color:black; border:none; border-radius:8px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.73 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-        Google ile Devam Et
+        Google ilə Davam Et
       </button>
 
-      <div class="auth-divider">Veya E-Posta İle</div>
+      <div class="auth-divider" style="text-align:center; margin:15px 0; color:#888; font-size:12px;">VƏ YA E-POÇT İLƏ</div>
 
-      <!-- Login Form with Floating Labels -->
+      <!-- Login Form -->
       <form id="userLoginForm" onsubmit="handleUserLogin(event)" style="display: flex; flex-direction: column; gap: 16px;">
-        <div class="float-group">
-          <input type="email" id="lEmail" class="float-input" placeholder=" " required autocomplete="email">
-          <label class="float-label" for="lEmail">E-Posta</label>
-        </div>
-        <div class="float-group" style="margin-bottom: 12px;">
-          <input type="password" id="lPass" class="float-input" placeholder=" " required autocomplete="current-password">
-          <label class="float-label" for="lPass">Şifre</label>
-        </div>
+        <input type="email" id="lEmail" placeholder="E-poçt ünvanınız" required style="width:100%; padding:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; border-radius:8px;">
+        <input type="password" id="lPass" placeholder="Şifrəniz" required style="width:100%; padding:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; border-radius:8px;">
         <button type="submit" class="btn-primary full" style="margin-top: 10px;">Giriş Yap</button>
-        <a href="#" onclick="switchUserTab('forgot')" style="font-size: 12px; color: var(--text-muted); text-align: center; display: block; margin-top: 5px; text-decoration: none;">Şifrenizi mi unuttunuz?</a>
+        <a href="#" onclick="switchUserTab('forgot')" style="font-size: 12px; color: #888; text-align: center; display: block; text-decoration: none;">Şifrənizi unutmusunuz?</a>
       </form>
 
-      <!-- Forgot Pass Form with Floating Labels -->
+      <!-- Forgot Pass Form -->
       <form id="userForgotForm" style="display: none; flex-direction: column; gap: 16px;" onsubmit="handleForgotPassword(event)">
-        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; text-align: center;">Şifrenizi sıfırlamak için kayıtlı e-posta adresinizi girin.</p>
-        <div class="float-group">
-          <input type="email" id="fEmail" class="float-input" placeholder=" " required autocomplete="email">
-          <label class="float-label" for="fEmail">E-Posta</label>
-        </div>
-        <button type="submit" class="btn-primary full" style="margin-top: 10px;">Sıfırlama Linki Gönder</button>
-        <button type="button" class="btn-ghost full" style="margin-top: 5px; font-size: 12px; border: 1px solid var(--border);" onclick="switchUserTab('login')">Girişe Dön</button>
+        <p style="font-size: 12px; color: #888; text-align: center;">Şifrəni sıfırlamaq üçün qeydiyyatdan keçdiyiniz e-poçt ünvanını daxil edin.</p>
+        <input type="email" id="fEmail" placeholder="E-poçt ünvanınız" required style="width:100%; padding:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; border-radius:8px;">
+        <button type="submit" class="btn-primary full" style="margin-top: 10px;">Sıfırlama Linki Göndər</button>
+        <button type="button" class="btn-ghost full" style="margin-top: 5px; font-size: 12px; border: 1px solid var(--border);" onclick="switchUserTab('login')">Girişə Qayıt</button>
       </form>
 
-      <!-- Register Form with Floating Labels -->
+      <!-- Register Form -->
       <form id="userRegForm" style="display: none; flex-direction: column; gap: 16px;" onsubmit="handleUserRegister(event)">
-        <div class="float-group">
-          <input type="text" id="rName" class="float-input" placeholder=" " required autocomplete="name">
-          <label class="float-label" for="rName">Ad Soyad</label>
+        <input type="text" id="rName" placeholder="Ad və Soyadınız" required style="width:100%; padding:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; border-radius:8px;">
+        <input type="email" id="rEmail" placeholder="E-poçt ünvanınız" required style="width:100%; padding:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; border-radius:8px;">
+        <input type="password" id="rPass" placeholder="Şifrəniz (ən azı 6 simvol)" required minlength="6" oninput="checkPwdStrength(this.value)" style="width:100%; padding:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; border-radius:8px;">
+        <div class="pwd-strength" style="height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
+          <div class="pwd-strength-bar" id="pwdBar" style="height:100%; width:0%; transition: 0.3s;"></div>
         </div>
-        <div class="float-group">
-          <input type="email" id="rEmail" class="float-input" placeholder=" " required autocomplete="email">
-          <label class="float-label" for="rEmail">E-Posta</label>
-        </div>
-        <div class="float-group" style="margin-bottom: 12px;">
-          <input type="password" id="rPass" class="float-input" placeholder=" " required minlength="6" autocomplete="new-password" oninput="checkPwdStrength(this.value)">
-          <label class="float-label" for="rPass">Şifre</label>
-          <div class="pwd-strength">
-            <div class="pwd-strength-bar" id="pwdBar"></div>
-          </div>
-        </div>
-        <button type="submit" class="btn-primary full" style="margin-top: 10px;">Hesap Oluştur</button>
+        <button type="submit" class="btn-primary full" style="margin-top: 10px;">Hesab Yarat</button>
       </form>
     </div>
 
     <div id="userLoggedIn" style="display:none; text-align:center; height:100%;">
-      
       <!-- TAB HEADER -->
       <div style="display:flex; gap:10px; margin-bottom:20px; justify-content:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; overflow-x:auto;">
-        <button class="btn-ghost user-dash-tab active" data-target="tab-user-info" style="color:var(--accent); border-bottom:2px solid var(--accent); white-space:nowrap;">Kişisel Bilgiler</button>
-        <button class="btn-ghost user-dash-tab" data-target="tab-user-orders" style="white-space:nowrap;">Onaylı Sipariş & Kargo Takibi</button>
-        <button class="btn-ghost user-dash-tab" data-target="tab-user-messages" style="white-space:nowrap;">Mesajlar & AI Destek</button>
+        <button class="btn-ghost user-dash-tab active" data-target="tab-user-info" style="color:var(--accent); border-bottom:2px solid var(--accent); white-space:nowrap;">Şəxsi Məlumatlar</button>
+        <button class="btn-ghost user-dash-tab" data-target="tab-user-messages" style="white-space:nowrap;">AI Dəstək</button>
       </div>
 
       <!-- TAB 1: INFO -->
@@ -592,106 +454,51 @@
           <div id="userAvatarContainer" style="margin: 0 auto 15px; width:80px; height:80px; border-radius:50%; border:2px solid var(--accent); overflow:hidden; display:none;">
             <img id="userAvatar" src="" style="width:100%; height:100%; object-fit:cover;">
           </div>
-          <h3 id="vipBadge" style="color:var(--text-dim); font-size:14px; letter-spacing:2px; margin-bottom: 5px; display:none;">VIP MÜŞTERİ</h3>
-          <h2 id="loggedUserName" style="font-family:var(--font-display); font-size:32px; color:var(--accent); margin-bottom: 5px;">User</h2>
-          <p style="font-size:12px; color:#888;">Profil Paneline Hoş Geldiniz</p>
-        </div>
-        
-        <div class="checkout-fields" style="border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:12px; background:rgba(0,0,0,0.2);">
-          <label style="font-size:12px; color:var(--accent); font-weight:bold; margin-bottom:10px; display:block;">DETAYLI ADRES BİLGİSİ</label>
-          <div style="display:flex; gap:10px; margin-bottom:10px;">
-            <button class="btn-ghost" type="button" onclick="findSavedLocation()" style="border:1px solid var(--accent); padding:0 12px; border-radius:6px; color:var(--accent); font-size:16px;" title="Konumumu Bul">📍</button>
-            <input type="text" id="savedCountry" placeholder="Ülke" style="flex:1;">
-            <input type="text" id="savedCity" placeholder="Şehir" style="flex:1;">
-          </div>
-          <input type="text" id="savedLine1" placeholder="Adres Satırı 1 (Mahalle, Cadde)" style="margin-bottom:10px;">
-          <input type="text" id="savedLine2" placeholder="Adres Satırı 2 (Bina, Daire vs.)" style="margin-bottom:10px;">
-          <input type="text" id="savedZip" placeholder="Posta Kodu" style="margin-bottom:15px; width:50%;">
-          <button class="btn-ghost" style="width:100%; border:1px solid var(--accent); padding:10px; border-radius:6px; color:var(--accent);" onclick="saveUserAddress()">Adresi Güncelle</button>
+          <h2 id="loggedUserName" style="font-family:var(--font-display); font-size:32px; color:var(--accent); margin-bottom: 5px;">İstifadəçi</h2>
+          <p style="font-size:12px; color:#888;">Profilinizə xoş gəldiniz</p>
         </div>
       </div>
 
-      <!-- TAB 2: ORDERS & TRACKING -->
-      <div id="tab-user-orders" class="user-dash-content" style="text-align:left; max-width:600px; margin:0 auto; display:none;">
-        <h3 style="margin-bottom:15px; font-size:16px;">Aktif Kargo Takibi (Canlı)</h3>
-        
-        <!-- Live Tracking Simulator UI -->
-        <div id="activeTrackerUI" style="display:none; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px; margin-bottom:20px;">
-           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; font-size:12px;">
-             <span style="color:var(--accent); font-weight:bold;" id="activeOrderNumber">Sipariş No: #DX-99382</span>
-             <span style="color:#4ade80;">Yolda 🚚</span>
-           </div>
-           
-           <div style="position:relative; height:4px; background:rgba(255,255,255,0.1); border-radius:4px; margin:20px 0;">
-             <div style="position:absolute; top:0; left:0; height:100%; width:33%; background:var(--accent); border-radius:4px; transition:width 1s ease;"></div>
-             <!-- Points -->
-             <div style="position:absolute; top:-6px; left:0%; width:16px; height:16px; border-radius:50%; background:var(--accent); outline:3px solid rgba(0,0,0,0.8);"></div>
-             <div style="position:absolute; top:-6px; left:33%; width:16px; height:16px; border-radius:50%; background:var(--accent); outline:3px solid rgba(0,0,0,0.8); box-shadow:0 0 10px var(--accent);"></div>
-             <div style="position:absolute; top:-6px; left:65%; width:16px; height:16px; border-radius:50%; background:rgba(255,255,255,0.2); outline:3px solid rgba(0,0,0,0.8);"></div>
-             <div style="position:absolute; top:-6px; left:100%; margin-left:-16px; width:16px; height:16px; border-radius:50%; background:rgba(255,255,255,0.2); outline:3px solid rgba(0,0,0,0.8);"></div>
-           </div>
-           
-           <div style="display:flex; justify-content:space-between; font-size:10px; color:#888;">
-             <span style="color:var(--accent);">Onaylandı</span>
-             <span style="color:var(--accent);">Hazırlanıyor</span>
-             <span>Kargoda</span>
-             <span>Teslim Edildi</span>
-           </div>
-           
-           <div style="margin-top:20px; font-size:12px; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">
-             <strong>📍 Son Konum:</strong> Siparişiniz başarıyla alındı ve depo ekibi tarafından hazırlanıyor.
-           </div>
-        </div>
-        <div id="noActiveOrderMsg" style="padding:20px; text-align:center; color:#888; border:1px solid rgba(255,255,255,0.05); border-radius:12px; margin-bottom:20px;">Hiçbir aktif kargonuz bulunmuyor.</div>
-
-        <h3 style="margin-bottom:15px; font-size:16px;">Geçmiş Siparişlerim</h3>
-        <div id="userOrdersList" style="display:flex; flex-direction:column; gap:15px;">
-           <div style="padding:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; text-align:center; font-size:13px; color:#888;">Diğer geçmiş sipariş kaydınız bulunmuyor.</div>
-        </div>
-      </div>
-
-      <!-- TAB 3: MESSAGES & AI -->
+      <!-- TAB 2: MESSAGES & AI -->
       <div id="tab-user-messages" class="user-dash-content" style="text-align:left; max-width:600px; margin:0 auto; display:none;">
-        <!-- AI Support Section in Profile -->
         <div class="checkout-fields" style="border:1px solid rgba(255,255,255,0.05); padding:20px; border-radius:12px; background:rgba(0,0,0,0.2);">
           <label style="font-size:12px; color:var(--accent); font-weight:bold; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-            <span>AI DESTEK & 45 GÜN İADE ASİSTANI</span>
+            <span>AI DESTEK & 45 GÜN ASSİSTANT</span>
             <span style="font-size:10px; background:var(--accent); color:#000; padding:2px 6px; border-radius:4px;">BETA</span>
           </label>
           <div id="aiChatBox" style="height: 250px; overflow-y: auto; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:15px; margin-bottom:10px; font-size:13px; display:flex; flex-direction:column; gap:10px;">
             <div style="background: rgba(255,255,255,0.05); padding:10px; border-radius:8px; align-self:flex-start; max-width:90%;">
-              Merhaba DroxStore Premium üyesi! 45 gün koşulsuz iade süresindesiniz. İade veya sipariş durumunuzla ilgili net bilgiyi size verebilirim.
+              Salam! DROX STORE Premium geyim asistanıdır. Ölçü, geri qaytarma və digər suallarınıza kömək edə bilərəm.
             </div>
           </div>
           <div style="display:flex; gap:8px;">
-            <input type="text" id="aiChatInput" placeholder="Sorunuzu yazın..." style="flex:1;" onkeypress="if(event.key==='Enter') sendAiMessage()">
+            <input type="text" id="aiChatInput" placeholder="Sualınızı yazın..." style="flex:1; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;" onkeypress="if(event.key==='Enter') sendAiMessage()">
             <button class="btn-primary" onclick="sendAiMessage()" style="padding: 0 15px;">Gönder</button>
           </div>
           <div style="margin-top:10px; text-align:center;">
-            <button class="btn-ghost" style="font-size:11px; padding:6px 12px; border:1px solid rgba(255,255,255,0.2); color:#ccc; border-radius:4px; width:100%;" onclick="escalateToAdmin()">Çözülemedi - Canlı Destek / Departmana Bağlan</button>
+            <button class="btn-ghost" style="font-size:11px; padding:6px 12px; border:1px solid rgba(255,255,255,0.2); color:#ccc; border-radius:4px; width:100%; cursor:pointer;" onclick="escalateToAdmin()">Canlı Dəstək / Menecerə Bağlan</button>
           </div>
         </div>
       </div>
       
       <div style="display:flex; gap:10px; max-width:600px; margin: 20px auto 0;">
-        <button class="btn-ghost" style="flex:1; border:1px solid var(--border); padding:15px; border-radius:8px;" onclick="closeUserDrawer(); window.location.hash='products'">Koleksiyona Devam</button>
-        <button class="btn-primary" style="flex:1; background:var(--accent2); color:white; border-radius:8px;" onclick="handleUserLogout()">Güvenli Çıkış</button>
+        <button class="btn-ghost" style="flex:1; border:1px solid var(--border); padding:15px; border-radius:8px; cursor:pointer;" onclick="closeUserDrawer(); window.location.hash='products'">Alış-verişə Davam Et</button>
+        <button class="btn-primary" style="flex:1; background:var(--accent2); color:white; border-radius:8px; cursor:pointer;" onclick="handleUserLogout()">Çıxış Et</button>
       </div>
-
     </div>
   </div>
 </div>
 
 <!-- ADMIN LOGIN -->
 <div class="admin-login-overlay" id="adminLoginOverlay">
-  <div class="admin-login-modal">
+  <div class="admin-login-modal" style="background:#111; padding:30px; border-radius:20px; max-width:400px; width:90%; position:relative;">
     <button class="modal-close" onclick="closeAdminLogin()">✕</button>
     <div class="admin-login-inner">
       <h2>Admin Girişi</h2>
-      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
-        <div class="admin-field"><input type="text" id="adminUser" placeholder="Kullanıcı adı" required></div>
-        <div class="admin-field"><input type="password" id="adminPass" placeholder="Şifre" required></div>
-        <div class="admin-login-error" id="adminLoginError"></div>
+      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
+        <input type="text" id="adminUser" placeholder="İstifadəçi adı" required style="width:100%; padding:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; border-radius:8px;">
+        <input type="password" id="adminPass" placeholder="Şifrə" required style="width:100%; padding:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; border-radius:8px;">
+        <div class="admin-login-error" id="adminLoginError" style="color:red; display:none; font-size:12px;"></div>
         <button type="submit" class="btn-primary full">Giriş Yap</button>
       </form>
     </div>
@@ -702,7 +509,7 @@
 <div class="admin-panel-overlay" id="adminPanelOverlay">
   <div class="admin-panel pro-version">
     <div class="admin-panel-header">
-      <div class="admin-panel-title"><h2>DroxStore Management v2.0</h2></div>
+      <div class="admin-panel-title"><h2>DroxStore Management v3.0</h2></div>
       <div class="admin-header-actions">
         <button class="btn-primary" style="padding:8px 16px; font-size:11px;" onclick="adminLogout()">Çıkış</button>
         <button class="admin-close-btn" onclick="closeAdminPanel()">✕</button>
@@ -714,8 +521,8 @@
         <div class="admin-tab active" data-tab="tab-list">Ürün Listesi</div>
         <div class="admin-tab" data-tab="tab-add">Yeni Ürün Ekle</div>
         <div class="admin-tab" data-tab="tab-cats">Kategori Yönetimi</div>
-        <div class="admin-tab" data-tab="tab-orders">Siparişler</div>
         <div class="admin-tab" data-tab="tab-discounts">İndirimler</div>
+        <div class="admin-tab" data-tab="tab-notifications">Bildirişlər</div>
         <div class="admin-tab" data-tab="tab-support">Destek Talepleri</div>
         <div class="admin-tab" data-tab="tab-settings">Sistem Ayarları</div>
       </div>
@@ -731,14 +538,6 @@
             <span class="admin-stat-num" id="statUsers" style="display:block; font-size:32px; font-family:var(--font-display); color:#4ade80;">0</span>
             <span class="admin-stat-label" style="font-size:12px; color:#888;">Kayıtlı Müşteri</span>
           </div>
-          <div class="admin-stat-card" style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); text-align:center;">
-            <span class="admin-stat-num" id="statSales" style="display:block; font-size:32px; font-family:var(--font-display); color:#facc15;">0</span>
-            <span class="admin-stat-label" style="font-size:12px; color:#888;">Satılan Ürün</span>
-          </div>
-          <div class="admin-stat-card" style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); text-align:center;">
-            <span class="admin-stat-num" id="statRevenue" style="display:block; font-size:32px; font-family:var(--font-display); color:#60a5fa;">0$</span>
-            <span class="admin-stat-label" style="font-size:12px; color:#888;">Toplam Kar/Ciro</span>
-          </div>
         </div>
         <div class="admin-product-list" id="adminProductList"></div>
       </div>
@@ -746,27 +545,27 @@
       <!-- TAB: ADD PRODUCT -->
       <div class="admin-tab-content" id="tab-add">
         <form id="addProductForm" onsubmit="handleAddProduct(event)">
-          <div class="admin-form-grid">
-            <div class="admin-field"><label>Ürün Adı *</label><input type="text" id="prodName" required></div>
-            <div class="admin-field"><label>Kategori *</label><select id="prodCategory" required></select></div>
-            <div class="admin-field"><label>Fiyat ($) *</label><input type="number" id="prodPrice" required></div>
-            <div class="admin-field"><label>Etiket</label><select id="prodBadge"><option value="">Yok</option><option value="Yeni">Yeni</option><option value="Limited">Limited</option><option value="Hot">Hot</option></select></div>
+          <div class="admin-form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div class="admin-field"><label>Ürün Adı *</label><input type="text" id="prodName" required style="width:100%; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;"></div>
+            <div class="admin-field"><label>Kategori *</label><select id="prodCategory" required style="width:100%; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:#222; color:white;"></select></div>
+            <div class="admin-field"><label>Fiyat (AZN) *</label><input type="number" id="prodPrice" required style="width:100%; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;"></div>
+            <div class="admin-field"><label>Etiket</label><select id="prodBadge" style="width:100%; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:#222; color:white;"><option value="">Yok</option><option value="Yeni">Yeni</option><option value="Limited">Limited</option><option value="Hot">Hot</option></select></div>
           </div>
-          <div class="admin-field" style="margin-bottom:15px;">
+          <div class="admin-field" style="margin-bottom:15px; margin-top:15px;">
             <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
               <input type="checkbox" id="prodFeatured" style="width:20px; height:20px;">
-              <span>Ana Sayfada Öne Çıkar (Top Drops Bölümünde Listele)</span>
+              <span>Ana Sayfada Öne Çıkar (Koleksiyonlarda Listele)</span>
             </label>
           </div>
-          <div class="admin-field"><label>Açıklama</label><textarea id="prodDesc" rows="3"></textarea></div>
-          <div class="admin-field"><label>Görseller (Maks 5) *</label>
-            <div class="image-upload-area" onclick="document.getElementById('prodImages').click()">
+          <div class="admin-field" style="margin-bottom:15px;"><label>Açıklama</label><textarea id="prodDesc" rows="3" style="width:100%; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;"></textarea></div>
+          <div class="admin-field" style="margin-bottom:15px;"><label>Görseller (Maks 5) *</label>
+            <div class="image-upload-area" onclick="document.getElementById('prodImages').click()" style="border:1px dashed rgba(255,255,255,0.2); padding:30px; text-align:center; cursor:pointer; border-radius:12px;">
               <input type="file" id="prodImages" accept="image/*" multiple onchange="handleMultiImageUpload(event)" style="display:none">
               <div class="upload-placeholder" id="uploadPlaceholder"><span>Tıkla ve En Az 1 Görsel Seç</span></div>
               <div class="multi-img-preview" id="imagePreviewArea"></div>
             </div>
           </div>
-          <div class="admin-field"><label>Bedenlere Göre Stok Adetleri</label>
+          <div class="admin-field" style="margin-bottom:20px;"><label>Bedenlere Göre Stok Adetleri</label>
             <div class="stock-grid">
               <div class="stock-item"><span>S:</span> <input type="number" id="s_stock" value="0" min="0"></div>
               <div class="stock-item"><span>M:</span> <input type="number" id="m_stock" value="0" min="0"></div>
@@ -780,90 +579,79 @@
 
       <!-- TAB: CATEGORY MANAGE -->
       <div class="admin-tab-content" id="tab-cats">
-        <div class="admin-field">
+        <div class="admin-field" style="margin-bottom:20px;">
           <label>Yeni Kategori Ekle</label>
-          <div style="display:flex; gap:10px;">
-            <input type="text" id="newCatName" placeholder="Kategori adı...">
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <input type="text" id="newCatName" placeholder="Kategori adı..." style="flex:1; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;">
             <button class="btn-primary" onclick="addNewCategory()">Ekle</button>
           </div>
         </div>
         <h3>Mevcut Kategoriler</h3>
-        <div class="cat-manage-list" id="adminCatList"></div>
-      </div>
-
-      <!-- TAB: ORDERS MANAGE -->
-      <div class="admin-tab-content" id="tab-orders">
-        <h3>Gelen Siparişler</h3>
-        <div class="order-list" id="adminOrderList"></div>
+        <div class="cat-manage-list" id="adminCatList" style="margin-top:15px;"></div>
       </div>
 
       <!-- TAB: DISCOUNTS MANAGE -->
       <div class="admin-tab-content" id="tab-discounts">
-        <div class="admin-field">
-          <label>Yeni İndirim Kodu Ekle (Çekiliş/Özel Kampanya)</label>
-          <div style="display:flex; gap:10px;">
-            <input type="text" id="newDiscountCode" placeholder="Kod (Örn: ÇEKİLİŞ20)" style="flex:2; text-transform:uppercase;">
-            <input type="number" id="newDiscountPercent" placeholder="Yüzde (%)" style="flex:1;" min="1" max="100">
-            <input type="number" id="newDiscountDays" placeholder="Süre (Gün - İsteğe Bağlı)" style="flex:1;" min="1" title="Boş bırakılırsa sınırsız olur">
+        <div class="admin-field" style="margin-bottom:20px;">
+          <label>Yeni İndirim Kodu Ekle</label>
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <input type="text" id="newDiscountCode" placeholder="Kod (Örn: DROX10)" style="flex:2; text-transform:uppercase; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;">
+            <input type="number" id="newDiscountPercent" placeholder="Yüzde (%)" style="flex:1; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;" min="1" max="100">
+            <input type="number" id="newDiscountDays" placeholder="Süre (Gün)" style="flex:1; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;" min="1">
             <button class="btn-primary" onclick="addNewDiscount()">Ekle</button>
           </div>
         </div>
         <h3 style="margin-top:20px;">Aktif İndirim Kodları</h3>
-        <div class="cat-manage-list" id="adminDiscountList"></div>
+        <div class="cat-manage-list" id="adminDiscountList" style="margin-top:15px;"></div>
+      </div>
+
+      <!-- TAB: BİLDİRİŞLƏR (NEW) -->
+      <div class="admin-tab-content" id="tab-notifications">
+        <h3>Müştərilərə Bildiriş Göndər</h3>
+        <div style="display:flex; flex-direction:column; gap:15px; background:rgba(255,255,255,0.02); padding:20px; border-radius:12px; margin-top:15px;">
+          <div class="admin-field">
+            <label>Bildiriş Başlığı *</label>
+            <input type="text" id="notifTitle" placeholder="Məsələn: Yay Endirimi! 🌟" style="width:100%; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;">
+          </div>
+          <div class="admin-field">
+            <label>Bildiriş Mesajı *</label>
+            <textarea id="notifMessage" rows="3" placeholder="Gözəl bir mesaj yazın..." style="width:100%; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:white;"></textarea>
+          </div>
+          <div class="admin-field">
+            <label>Bildiriş Növü</label>
+            <select id="notifType" style="width:100%; padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:#222; color:white;">
+              <option value="announcement">📢 Elan</option>
+              <option value="new_product">🆕 Yeni Məhsul</option>
+              <option value="discount">🏷️ Endirim</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="sendAdminNotification()" style="align-self:flex-start;">Bildirişi Göndər</button>
+        </div>
+        <h3 style="margin-top:30px;">Göndərilmiş Bildirişlər</h3>
+        <div class="order-list" id="adminNotifList" style="margin-top:15px;"></div>
       </div>
       
       <!-- TAB: SUPPORT MANAGE -->
       <div class="admin-tab-content" id="tab-support">
         <h3>Müşteri Destek Talepleri</h3>
-        <div class="order-list" id="adminSupportList">
-          <!-- JS will populate -->
-        </div>
+        <div class="order-list" id="adminSupportList" style="margin-top:15px;"></div>
       </div>
 
       <!-- TAB: SYSTEM SETTINGS -->
       <div class="admin-tab-content" id="tab-settings">
         <div class="admin-field" style="margin-bottom: 20px;">
-          <h3>Ayrıcalık & İndirim Ayarları</h3>
-          <p style="font-size: 13px; color: #888; margin-bottom: 15px;">Bu ayarlar anında tüm sistemi etkiler.</p>
-          <div style="display:flex; flex-direction:column; gap:15px; background:rgba(255,255,255,0.02); padding:15px; border-radius:12px;">
+          <h3>Sistem Ayarları</h3>
+          <div style="display:flex; flex-direction:column; gap:15px; background:rgba(255,255,255,0.02); padding:15px; border-radius:12px; margin-top:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">VIP Müşteri Olma Harcama Limiti ($):</span>
+              <span style="font-size:14px;">WhatsApp Sifariş Nömrəsi:</span>
+              <input type="text" id="set_whatsappNumber" style="width:180px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:14px;">VIP Müşteri Olma Limiti (AZN):</span>
               <input type="number" id="set_vipThreshold" style="width:120px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">Sepet Adet İndirimi Hedefi (Kaç ürün alınmalı?):</span>
-              <input type="number" id="set_qtyTarget" style="width:120px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">Sepet Adet İndirimi Yüzdesi (%):</span>
-              <input type="number" id="set_qtyPercent" style="width:120px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">Ayın Günü (Genelde 8'i) İndirim Yüzdesi (%):</span>
-              <input type="number" id="set_datePercent" style="width:120px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
             </div>
           </div>
           <button class="btn-primary" style="margin-top:20px;" onclick="saveSystemSettings()">Ayarları Kaydet</button>
-        </div>
-
-        <div class="admin-field" style="margin-top: 30px;">
-          <h3>🔗 Printful Otomatik Ürün Entegrasyonu</h3>
-          <p style="font-size: 13px; color: #888; margin-bottom: 15px;">Printful'daki ürünlerinizi kar marjınızı ekleyerek otomatik mağazaya çeker. Stoklar sınırsız (999) olarak belirlenir.</p>
-          <div style="display:flex; flex-direction:column; gap:15px; background:rgba(255,255,255,0.02); padding:15px; border-radius:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">Printful API Token (Access Key):</span>
-              <input type="password" id="set_printfulToken" placeholder="gJbhq..." style="width:200px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">Dolar Kuru (Örn: 1.00):</span>
-              <input type="number" id="set_usdRate" style="width:120px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px;">Kar Marjı Yüzdesi (% Kaç Kar Eklensin?):</span>
-              <input type="number" id="set_printfulMargin" style="width:120px; padding:6px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
-            </div>
-          </div>
-          <button class="btn-primary" style="margin-top:20px; background: #6366f1;" onclick="syncPrintfulProducts()">🔄 Printful Ayarlarını Kaydet ve Ürünleri Çek</button>
         </div>
       </div>
     </div>
@@ -907,21 +695,16 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- FLOATING WHATSAPP BUTTON -->
+<a href="https://wa.me/994553229166" target="_blank" id="whatsappFloat" style="position:fixed; bottom:25px; right:25px; width:60px; height:60px; background:#25D366; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px rgba(37,211,102,0.4); z-index:999; transition:transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
 
-<!-- Google Translate Hidden Div -->
-<div id="google_translate_element" style="display:none;"></div>
-<script type="text/javascript">
-  function googleTranslateElementInit() {
-    new google.translate.TranslateElement({pageLanguage: 'tr', autoDisplay: false}, 'google_translate_element');
-  }
-</script>
-<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<div class="toast" id="toast"></div>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-
 <script src="app.js"></script>
 </body>
 </html>

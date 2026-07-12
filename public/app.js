@@ -1,5 +1,5 @@
 /* ============================================
-   DROXSTORE — Frontend App (v3.0 Cloud Pro)
+   DROXSTORE — Frontend App (v4.0 Azerbaijani WhatsApp & Notifications)
    ============================================ */
 
 const API_BASE = '';
@@ -14,8 +14,9 @@ let customerToken = localStorage.getItem('drox_cust_token') || null;
 let customerData = JSON.parse(localStorage.getItem('drox_cust_data') || 'null');
 let selectedFiles = [];
 let allDiscounts = [];
-let activeAppliedDiscount = null;
-let globalSettings = { vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8 };
+let globalSettings = { vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8, whatsappNumber: '994553229166' };
+let allNotifications = [];
+let lastSeenNotifTime = parseInt(localStorage.getItem('drox_last_notif') || '0');
 
 // FIREBASE FRONTEND CONFIG
 const pbConfig = {
@@ -60,12 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
 const API = {
   async get(url) {
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Yüklenemedi');
+    if (!res.ok) throw new Error('Yüklənə bilmədi');
     return res.json();
   },
   async authAction(url, method, body = null, isFormData = false) {
     const headers = {};
-    if (adminToken && url.includes('/api/auth') === false && !url.includes('/api/customers') && !url.includes('/api/reviews')) {
+    if (adminToken && !url.includes('/api/auth') && !url.includes('/api/customers') && !url.includes('/api/reviews')) {
       headers['Authorization'] = `Bearer ${adminToken}`;
     } else if (customerToken && (url.includes('/api/customers') || url.includes('/api/reviews'))) {
       headers['Authorization'] = `Bearer ${customerToken}`;
@@ -80,11 +81,11 @@ const API = {
     
     if (contentType && contentType.indexOf("application/json") !== -1) {
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'İşlem başarısız');
+      if (!res.ok) throw new Error(data.error || 'Əməliyyat uğursuz oldu');
       return data;
     } else {
       const text = await res.text();
-      throw new Error(`Sunucu hatası (${res.status}): Beklenmeyen format.`);
+      throw new Error(`Server xətası (${res.status})`);
     }
   }
 };
@@ -97,7 +98,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initCart();
   initModal();
-  initLanguageMenu();
   initSearch();
   initReveal();
   updateCartUI();
@@ -109,13 +109,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     firebase.auth().getRedirectResult().then(async (result) => {
       if (result && result.user) {
         await syncFirebaseUserWithBackend(result.user, result.user.displayName);
-        showToast(`Hoş geldin, ${result.user.displayName}! 🎉`);
+        showToast(`Xoş gəldiniz, ${result.user.displayName}! 🎉`);
         refreshUserUI();
       }
     }).catch((err) => {
-      if (err.code && err.code !== 'auth/cancelled-popup-request') {
-        console.error('Redirect auth error:', err);
-      }
+      console.error('Redirect auth error:', err);
     });
 
     // Zaten giriş yapmış kullanıcıyı otomatik yükle
@@ -137,6 +135,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Mandatory registration check
+  if (!customerToken && !customerData) {
+    setTimeout(() => {
+      openUserDrawer();
+      showToast('Xahiş edirik, davam etmək üçün qeydiyyatdan keçin və ya giriş edin.');
+    }, 2000);
+  }
+
+  // Notification polling
+  setInterval(loadNotifications, 60000);
 });
 
 // ─── SPA ROUTER ──────────────────────────────────────────────────
@@ -149,19 +158,18 @@ function handleRoute() {
   const hash = window.location.hash || '#home';
   const sections = document.querySelectorAll('.app-view');
   
-  // Hide all sections first
   sections.forEach(s => {
     s.style.display = 'none';
     s.classList.remove('active-view');
   });
 
-  // Handle specific routes
   if (hash === '#home') {
     showView('home-view');
     showView('catSection');
   } else if (hash.startsWith('#products')) {
     showView('products');
-    document.querySelector('.hero').style.display = 'none'; // Ensure hero is hidden
+    const hero = document.querySelector('.hero');
+    if (hero) hero.style.display = 'none';
   } else if (hash === '#about') {
     showView('about-view');
   } else if (hash === '#contact') {
@@ -169,10 +177,10 @@ function handleRoute() {
   } else if (hash === '#auth') {
     showView('home-view');
     openUserDrawer();
-    window.location.hash = ''; // reset hash so it doesn't stay
+    window.location.hash = '';
   } else if (hash === '#admin') {
-    openAdmin(); // open admin modal
-    window.location.hash = ''; // reset hash so it doesn't stay
+    openAdminLogin();
+    window.location.hash = '';
   } else {
     showView('home-view');
     showView('catSection');
@@ -186,7 +194,6 @@ function showView(id) {
   if (el) {
     el.style.display = 'block';
     el.classList.add('active-view');
-    // Re-trigger reveal animation
     el.style.opacity = "0";
     el.style.transform = "translateY(20px)";
     setTimeout(() => {
@@ -227,7 +234,7 @@ function initSearch() {
       `).join('');
       searchResults.classList.add('active');
     } else {
-      searchResults.innerHTML = '<div class="search-item">Sonuç bulunamadı.</div>';
+      searchResults.innerHTML = '<div class="search-item">Məhsul tapılmadı.</div>';
       searchResults.classList.add('active');
     }
   });
@@ -254,7 +261,6 @@ function initReveal() {
     });
   }, observerOptions);
 
-  // Initial reveal for hero lines
   setTimeout(() => {
     document.querySelectorAll('.hero-title .line').forEach((line, i) => {
       setTimeout(() => line.style.opacity = "1", i * 200);
@@ -262,7 +268,6 @@ function initReveal() {
     });
   }, 500);
 
-  // Observe other sections
   document.querySelectorAll('section, .product-card, .cat-card').forEach(el => {
     el.style.opacity = "0";
     el.style.transform = "translateY(30px)";
@@ -271,7 +276,6 @@ function initReveal() {
   });
 }
 
-// Add CSS for revealed state if not already in CSS
 const style = document.createElement('style');
 style.textContent = `
   .revealed {
@@ -281,45 +285,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-function initLanguageMenu() {
-  const cookieMatch = document.cookie.match(/googtrans=\/tr\/([a-zA-Z-]+)/);
-  let currentLang = cookieMatch ? cookieMatch[1] : null;
-
-  // Otomatik dil değiştirici kaldırıldı. Sadece mevcut dili göster.
-
-  // Update UI to current lang
-  const langEl = document.getElementById('langCurrent');
-  if (langEl) {
-    if (currentLang && currentLang !== 'tr') {
-      langEl.textContent = currentLang.toUpperCase().substring(0,2);
-    } else {
-      langEl.textContent = 'TR';
-    }
-  }
-
-  // Close drop down when clicking outside
-  document.addEventListener('click', (e) => {
-    if(!e.target.closest('.lang-selector')) {
-      document.querySelector('.lang-selector')?.classList.remove('open');
-    }
-  });
-}
-
-function toggleLangMenu() {
-  document.querySelector('.lang-selector').classList.toggle('open');
-}
-
-function setLanguage(lang) {
-  if(lang === 'tr') {
-    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${location.hostname}; path=/;`;
-  } else {
-    document.cookie = `googtrans=/tr/${lang}; path=/`;
-    document.cookie = `googtrans=/tr/${lang}; domain=.${location.hostname}; path=/`;
-  }
-  location.reload();
-}
-
 async function refreshAllData() {
   try {
     allCategories = await API.get('/api/categories');
@@ -327,23 +292,20 @@ async function refreshAllData() {
     
     try {
       globalSettings = await API.get('/api/settings');
-    } catch(err) { console.warn("Ayarlar yüklenemedi", err); }
+    } catch(err) { console.warn("Ayarlar yüklənə bilmədi", err); }
 
     try {
-      let rawDiscounts = await API.get('/api/discounts');
-      const now = new Date();
-      // Yalnızca süresi dolmamış olanları (veya süresiz olanları) aktif kabul et
-      allDiscounts = rawDiscounts.filter(d => !d.validUntil || new Date(d.validUntil) >= now);
-    } catch(err) { console.warn("İndirimler yüklenemedi", err); }
+      allDiscounts = await API.get('/api/discounts');
+    } catch(err) { console.warn("Endirimlər yüklənə bilmədi", err); }
     
+    await loadNotifications();
     renderCategories();
     renderProducts(currentFilter);
     renderTopDrops();
-    renderPublicDiscounts();
 
     if (adminToken) await refreshAdminPanel();
   } catch (err) {
-    console.error('Veri yenileme hatası:', err);
+    console.error('Data yeniləmə xətası:', err);
   }
 }
 
@@ -351,14 +313,14 @@ async function refreshAllData() {
 function renderCategories() {
   const filters = document.getElementById('productFilters');
   if(!filters) return;
-  filters.innerHTML = `<button class="filter-btn ${currentFilter === 'all'?'active':''}" data-cat="all" onclick="setProductFilter('all', this)">Tümü</button>` + 
+  filters.innerHTML = `<button class="filter-btn ${currentFilter === 'all'?'active':''}" data-cat="all" onclick="setProductFilter('all', this)">Hamısı</button>` + 
     allCategories.map(cat => `
       <button class="filter-btn ${currentFilter === cat.slug?'active':''}" data-cat="${cat.slug}" onclick="setProductFilter('${cat.slug}', this)">${cat.name}</button>
     `).join('');
 
   const select = document.getElementById('prodCategory');
   if(select) {
-    select.innerHTML = '<option value="">Seçiniz...</option>' + 
+    select.innerHTML = '<option value="">Seçin...</option>' + 
       allCategories.map(cat => `<option value="${cat.slug}">${cat.name}</option>`).join('');
   }
 
@@ -380,13 +342,14 @@ function renderProducts(filter) {
 
   if (filtered.length === 0) {
     grid.innerHTML = '';
-    document.getElementById('emptyStore').style.display = 'flex';
+    const emptyStore = document.getElementById('emptyStore');
+    if (emptyStore) emptyStore.style.display = 'flex';
     return;
   }
-  document.getElementById('emptyStore').style.display = 'none';
+  const emptyStore = document.getElementById('emptyStore');
+  if (emptyStore) emptyStore.style.display = 'none';
   grid.innerHTML = filtered.map((p, i) => createProductCard(p, i)).join('');
 
-  // Re-observe new product cards
   document.querySelectorAll('.product-card').forEach(el => {
     if (!el.classList.contains('revealed')) {
       el.style.opacity = "0";
@@ -407,12 +370,11 @@ function renderProducts(filter) {
 
 function renderTopDrops() {
   const featured = allProducts.filter(p => p.isFeatured);
-  const heroGrid = document.querySelector('.cat-grid'); // Reusing category grid for Top Drops if available
+  const heroGrid = document.getElementById('catGridArea');
   if(heroGrid && featured.length > 0) {
-    document.querySelector('#catSection h2').textContent = "TOP DROPS (Öne Çıkanlar)";
     heroGrid.innerHTML = featured.map((p, i) => createProductCard(p, i)).join('');
   } else if (heroGrid) {
-    heroGrid.innerHTML = '<p style="color:var(--text); opacity:0.5;">Henüz öne çıkan ürün yok.</p>';
+    heroGrid.innerHTML = '<p style="color:var(--text); opacity:0.5; text-align:center; width:100%;">Hələ ki öne çıxan məhsul yoxdur.</p>';
   }
 }
 
@@ -429,11 +391,12 @@ function createProductCard(p, i) {
         ${badgeHtml}
         <button class="wishlist-btn" onclick="event.stopPropagation(); toggleWishlist('${p.id}', this)" style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.5); border: none; color: white; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer; z-index: 5; transition: transform 0.2s, color 0.2s;">🤍</button>
         <div class="prod-overlay">
-          <button class="overlay-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">Hızlı Ekle</button>
+          <button class="overlay-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">Səbətə Əlavə Et</button>
         </div>
       </div>
       <div class="prod-info">
         <div class="prod-name">${p.name}</div>
+        <div style="font-size:11px; color:var(--accent); opacity:0.7; margin-top:2px; font-family:var(--font-ui); font-weight:600;">${p.productCode || ''}</div>
         <div class="prod-meta">
           <div class="prod-price">${Number(p.price).toLocaleString()} AZN</div>
         </div>
@@ -446,13 +409,13 @@ function toggleWishlist(id, btn) {
   const isWished = btn.textContent === '💛';
   if (isWished) {
     btn.textContent = '🤍';
-    showToast('Favorilerden çıkarıldı');
+    showToast('Favorilərdən çıxarıldı');
   } else {
     btn.textContent = '💛';
     btn.style.color = 'var(--accent)';
     btn.style.transform = 'scale(1.2)';
     setTimeout(() => btn.style.transform = 'scale(1)', 200);
-    showToast('Favorilere eklendi');
+    showToast('Favorilərə əlavə edildi');
   }
 }
 
@@ -493,7 +456,11 @@ function initTabs() {
       document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
       tab.classList.add('active');
-      document.getElementById(tab.dataset.tab)?.classList.add('active');
+      const targetContent = document.getElementById(tab.dataset.tab);
+      if (targetContent) targetContent.classList.add('active');
+      if (tab.dataset.tab === 'tab-notifications') {
+        loadAdminNotifications();
+      }
     });
   });
 }
@@ -504,18 +471,24 @@ function initModal() {
   mo?.addEventListener('click', e => { if (e.target === mo) closeModal(); });
   document.getElementById('modalClose')?.addEventListener('click', closeModal);
   
-  // Also handle Esc key to close all modals
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeModal();
       closeCart();
       closeUserDrawer();
-      closeCheckout();
+      closeNotifications();
     }
   });
 }
 
 function openModal(id) {
+  // Giriş yoxdursa, modalı açma, qeydiyyat drawer-ini aç
+  if (!customerToken && !customerData) {
+    openUserDrawer();
+    showToast('Xahiş edirik, məhsula baxmaq üçün daxil olun.');
+    return;
+  }
+
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
   currentProduct = p;
@@ -527,7 +500,6 @@ function openModal(id) {
     </div>
   `).join('');
 
-  // Sadece stoğu olan bedenleri seçilebilir yap
   const sizesHTML = ['S', 'M', 'L', 'XL'].map(s => {
     const qty = p.stock ? Number(p.stock[s] || 0) : 0;
     const disabled = qty <= 0 ? 'disabled style="opacity:0.3; text-decoration:line-through;"' : '';
@@ -535,7 +507,7 @@ function openModal(id) {
   }).join(' ');
 
   const totalStock = p.stock ? Object.values(p.stock).reduce((a,b)=>Number(a)+Number(b),0) : 0;
-  const stockInfo = totalStock > 0 ? `<span style="color:green">Stokta (${totalStock})</span>` : `<span style="color:red">Tükendi</span>`;
+  const stockInfo = totalStock > 0 ? `<span style="color:#25D366; font-weight:bold;">Stokda var (${totalStock} ədəd)</span>` : `<span style="color:red; font-weight:bold;">Tükənib</span>`;
 
   document.getElementById('modalContent').innerHTML = `
     <div class="modal-body">
@@ -546,14 +518,16 @@ function openModal(id) {
       <div class="modal-details">
         <div class="modal-tag">${stockInfo}</div>
         <h2 class="modal-title">${p.name}</h2>
+        <div style="font-size:12px; color:var(--accent); font-weight:600; margin-bottom:10px;">Kod: ${p.productCode || '---'}</div>
         <div class="modal-price">${Number(p.price).toLocaleString()} AZN</div>
-        <div class="modal-section-label">Açıklama</div>
-        <p class="modal-desc">${p.desc || 'Bu ürün detayına henüz bir açıklama girilmemiş.'}</p>
-        <div class="size-selection" style="margin-top:10px; display:flex; gap:10px;">Beden: ${sizesHTML}</div>
-        <button class="modal-add-btn" style="margin-top:20px;" onclick="addFromModal()" ${totalStock<=0?'disabled':''}>Sepete Ekle</button>
-        <button class="btn-ghost" style="width:100%; border:1px solid var(--border); padding:10px; border-radius:6px; color:var(--text-dim); margin-top:10px;" onclick="openSizeGuide()">📏 Beden Asistanı Kılavuzu</button>
-        
-        <!-- Yorumlar Gelecek Buraya -->
+        <div class="modal-section-label">Açıqlama</div>
+        <p class="modal-desc">${p.desc || 'Bu məhsul üçün hələ təsvir daxil edilməyib.'}</p>
+        <div class="size-selection" style="margin-top:15px; display:flex; gap:10px; font-weight:bold;">Bədən: ${sizesHTML}</div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button class="modal-add-btn" onclick="addFromModal()" ${totalStock<=0?'disabled':''} style="flex:1;">Səbətə Əlavə Et</button>
+          <button class="modal-add-btn" onclick="orderSingleViaWhatsApp()" style="flex:1; background:#25D366; border-color:#25D366; color:white;">📱 WhatsApp ilə Al</button>
+        </div>
+        <button class="btn-ghost" style="width:100%; border:1px solid var(--border); padding:10px; border-radius:6px; color:var(--text-dim); margin-top:15px; cursor:pointer;" onclick="openSizeGuide()">📏 Bədən Ölçüsü Kılavuzu</button>
         <div id="productReviewsArea" class="reviews-section"></div>
       </div>
     </div>
@@ -568,12 +542,12 @@ function openModal(id) {
 async function fetchAndRenderReviews(productId) {
   const area = document.getElementById('productReviewsArea');
   if(!area) return;
-  area.innerHTML = '<i style="color:#888;">Yorumlar yükleniyor...</i>';
+  area.innerHTML = '<i style="color:#888;">Rəylər yüklənir...</i>';
   try {
     const reviews = await API.get('/api/reviews/' + productId);
     renderReviews(productId, reviews);
   } catch(e) {
-    area.innerHTML = '<span style="color:#ff4d4d">Yorumlar yüklenirken hata oluştu.</span>';
+    area.innerHTML = '<span style="color:#ff4d4d">Rəylər yüklənərkən xəta baş verdi.</span>';
   }
 }
 
@@ -581,12 +555,12 @@ function renderReviews(productId, reviews) {
   const area = document.getElementById('productReviewsArea');
   if(!area) return;
 
-  let html = `<h3 style="margin-bottom:10px;">Ürün Değerlendirmeleri (${reviews.length})</h3>`;
+  let html = `<h3 style="margin-bottom:10px;">Məhsul Rəyləri (${reviews.length})</h3>`;
   
   if (customerToken && customerData) {
     html += `
       <div class="review-form">
-        <h4 style="margin-bottom:10px; font-size:14px;">Değerlendirmenizi Yazın</h4>
+        <h4 style="margin-bottom:10px; font-size:14px;">Məhsulu Qiymətləndirin</h4>
         <form onsubmit="submitReview(event, '${productId}')">
           <div class="rating-input">
             <input type="radio" id="star5" name="rating" value="5" required>
@@ -600,24 +574,20 @@ function renderReviews(productId, reviews) {
             <input type="radio" id="star1" name="rating" value="1">
             <label for="star1">★</label>
           </div>
-          <textarea id="reviewComment" rows="3" placeholder="Bu ürün hakkında ne düşünüyorsunuz?" style="width:100%; border-radius:6px; padding:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; margin-bottom:10px; font-family:inherit;" required></textarea>
+          <textarea id="reviewComment" rows="3" placeholder="Məhsul haqqında fikirləriniz..." style="width:100%; border-radius:6px; padding:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; margin-bottom:10px; font-family:inherit;" required></textarea>
           <input type="file" id="reviewImage" accept="image/*" style="width:100%; margin-bottom:10px; padding:8px; background:rgba(255,255,255,0.05); border-radius:6px; border:1px solid rgba(255,255,255,0.1); color:white; font-size:12px;">
-          <button type="submit" class="btn-primary" style="padding: 8px 15px; font-size:12px;">Gönder</button>
+          <button type="submit" class="btn-primary" style="padding: 8px 15px; font-size:12px; cursor:pointer;">Gönder</button>
         </form>
       </div>
     `;
-  } else {
-    html += `<div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:6px; font-size:12px; margin-bottom:15px; text-align:center;">
-      Yorum yapabilmek için lütfen <a href="#" onclick="closeModal(); openUserDrawer(); return false;" style="color:var(--accent); text-decoration:underline;">giriş yapın</a>.
-    </div>`;
   }
 
   if (reviews.length === 0) {
-    html += `<p style="font-size:13px; color:#888; margin-top:15px; text-align:center;">Bu ürün için henüz değerlendirme yapılmamış.</p>`;
+    html += `<p style="font-size:13px; color:#888; margin-top:15px; text-align:center;">Bu məhsul üçün hələ heç bir rəy yazılmayıb.</p>`;
   } else {
     let listHtml = reviews.map(r => {
        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-       const dateStr = new Date(r.timeMs).toLocaleDateString('en-US');
+       const dateStr = new Date(r.timeMs).toLocaleDateString('az-AZ');
        const defaultAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="%23888" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
        return `
          <div class="review-card">
@@ -645,11 +615,11 @@ async function submitReview(e, productId) {
   const comment = form.querySelector('#reviewComment').value;
   const imageInput = form.querySelector('#reviewImage');
 
-  if(!ratingInput) return showToast('Lütfen yıldız ile puan verin.');
+  if(!ratingInput) return showToast('Zəhmət olmasa ulduz seçin.');
   
   const btn = form.querySelector('button');
   btn.disabled = true;
-  btn.textContent = 'Gönderiliyor...';
+  btn.textContent = 'Göndərilir...';
 
   try {
     const formData = new FormData();
@@ -663,16 +633,15 @@ async function submitReview(e, productId) {
     }
 
     await API.authAction('/api/reviews', 'POST', formData, true);
-    showToast('Değerlendirmeniz başarıyla eklendi!');
+    showToast('Rəyiniz uğurla əlavə edildi!');
     fetchAndRenderReviews(productId);
   } catch(err) {
-    showToast('Hata: ' + err.message);
+    showToast('Xəta: ' + err.message);
   } finally {
     btn.disabled = false;
     btn.textContent = 'Gönder';
   }
 }
-
 
 function setModalImg(idx, el) {
   document.getElementById('mainModalImg').src = currentProduct.images[idx];
@@ -682,11 +651,6 @@ function setModalImg(idx, el) {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function closeCheckout() {
-  document.getElementById('checkoutOverlay').classList.remove('open');
   document.body.style.overflow = '';
 }
 
@@ -702,29 +666,37 @@ function closeUserDrawer() {
   document.body.style.overflow = '';
 }
 
-// ─── CART & CHECKOUT ─────────────────────────────────────────────
+// ─── CART & WHATSAPP ORDERS ──────────────────────────────────────
 function initCart() {
-  document.getElementById('cartBtn')?.addEventListener('click', openCart);
+  document.getElementById('cartBtn')?.addEventListener('click', () => {
+    if (!customerToken && !customerData) {
+      openUserDrawer();
+      showToast('Zəhmət olmasa səbətə baxmaq üçün daxil olun.');
+      return;
+    }
+    openCart();
+  });
   document.getElementById('cartClose')?.addEventListener('click', closeCart);
   document.getElementById('cartOverlay')?.addEventListener('click', closeCart);
 }
+
 function openCart() {
   document.getElementById('cartDrawer').classList.add('open');
-  document.getElementById('cartOverlay').classList.add('open');
+  document.getElementById('cartOverlay').add('open');
   document.body.style.overflow = 'hidden';
   renderCart();
 }
-function closeCart() {
-  document.getElementById('cartDrawer').classList.remove('open');
-  document.getElementById('cartOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
 
 function addToCart(p, size='M', qty=1) {
+  if (!customerToken && !customerData) {
+    openUserDrawer();
+    showToast('Məhsul əlavə etmək üçün daxil olmalısınız.');
+    return;
+  }
   const existing = cart.find(i => i.id === p.id && i.size === size);
   if (existing) existing.qty += qty;
   else cart.push({ id:p.id, name:p.name, price:p.price, qty, image:p.images[0], size:size });
-  saveCart(); updateCartUI(); showToast(`"${p.name}" sepete eklendi!`);
+  saveCart(); updateCartUI(); showToast(`"${p.name}" səbətə əlavə edildi!`);
 }
 
 function quickAdd(id) {
@@ -732,7 +704,7 @@ function quickAdd(id) {
   if (p) {
     const availableSizes = ['S', 'M', 'L', 'XL'].filter(s => p.stock && p.stock[s] > 0);
     if(availableSizes.length > 0) addToCart(p, availableSizes[0]);
-    else showToast('Ürün stokta yok.');
+    else showToast('Məhsul anbarda yoxdur.');
   }
 }
 
@@ -749,204 +721,188 @@ function removeFromCart(idx) {
 }
 function saveCart() { localStorage.setItem('drox_cart', JSON.stringify(cart)); }
 
+function calculateCartTotals() {
+  const subTotal = cart.reduce((s,i) => s + (i.price * i.qty), 0);
+  const itemsCount = cart.reduce((s,i) => s + i.qty, 0);
+  return { subTotal, itemsCount, finalTotal: subTotal };
+}
+
 function updateCartUI() {
   const calc = calculateCartTotals();
   document.getElementById('cartCount').textContent = calc.itemsCount;
   const el = document.getElementById('cartItemCount'); if(el) el.textContent = calc.itemsCount;
-  
   const tEl = document.getElementById('cartTotal'); 
-  if(tEl) {
-    if (calc.discountAmount > 0) {
-      tEl.innerHTML = `<span style="text-decoration:line-through; font-size:12px; opacity:0.5; margin-right:5px;">${calc.subTotal.toLocaleString()} AZN</span> <span style="color:#4ade80;">${calc.finalTotal.toLocaleString()} AZN</span>`;
-    } else {
-      tEl.textContent = calc.subTotal.toLocaleString() + ' AZN';
-    }
-  }
+  if(tEl) tEl.textContent = calc.subTotal.toLocaleString() + ' AZN';
 }
 
 function renderCart() {
   const el = document.getElementById('cartItems');
-  if (cart.length === 0) { el.innerHTML = '<div class="cart-empty"><p>Sepetin boş</p></div>'; return; }
+  if (cart.length === 0) { el.innerHTML = '<div class="cart-empty" style="text-align:center; padding:45px 0; color:#888;"><p>Səbətiniz boşdur</p></div>'; return; }
   el.innerHTML = cart.map((item, idx) => `
     <div class="cart-item">
       <div class="cart-item-img"><img src="${item.image || ''}"></div>
-      <div class="cart-item-info"><strong>${item.name}</strong><span>Beden: ${item.size} | ${Number(item.price).toLocaleString()} AZN x ${item.qty}</span></div>
+      <div class="cart-item-info"><strong>${item.name}</strong><span>Bədən: ${item.size} | ${Number(item.price).toLocaleString()} AZN x ${item.qty}</span></div>
       <button class="cart-item-remove" onclick="removeFromCart(${idx})">✕</button>
     </div>
   `).join('');
 }
 
-function openCheckout() {
-  if (cart.length === 0) return showToast('Sepet boş!');
-  closeCart();
-  refreshCheckoutTotal();
-  document.getElementById('checkoutOverlay').classList.add('open');
-}
-function closeCheckout() {
-  document.getElementById('checkoutOverlay').classList.remove('open');
-}
-
-function calculateCartTotals() {
-  const subTotal = cart.reduce((s,i) => s + (i.price * i.qty), 0);
-  const itemsCount = cart.reduce((s,i) => s + i.qty, 0);
+// WhatsApp Order Logic
+function orderViaWhatsApp() {
+  if (cart.length === 0) return showToast('Səbətiniz boşdur!');
   
-  let discountPercentage = 0;
-  let infoParts = [];
+  const num = globalSettings.whatsappNumber || '994553229166';
+  let message = 'Salam! DroxStore saytından bu məhsulları sifariş etmək istəyirəm:\n\n';
+  let total = 0;
 
-  if (new Date().getDate() === 8 && globalSettings.dateDiscountPercent > 0) {
-    discountPercentage += globalSettings.dateDiscountPercent;
-    infoParts.push(`Ayın 8'i Özel (%${globalSettings.dateDiscountPercent})`);
+  cart.forEach((item, idx) => {
+    const orig = allProducts.find(p => p.id === item.id);
+    const code = orig ? orig.productCode : '---';
+    message += `${idx + 1}. [Kod: ${code}] ${item.name} - Bədən: ${item.size} - Say: ${item.qty} - Qiymət: ${item.price} AZN\n`;
+    total += item.price * item.qty;
+  });
+
+  message += `\n💰 Ümumi məbləğ: ${total} AZN`;
+  if (customerData) {
+    message += `\n👤 Müştəri: ${customerData.name} (${customerData.email})`;
   }
 
-  if (itemsCount >= globalSettings.qtyDiscountTarget && globalSettings.qtyDiscountPercent > 0) {
-    discountPercentage += globalSettings.qtyDiscountPercent;
-    infoParts.push(`${globalSettings.qtyDiscountTarget}+ Ürün Fırsatı (%${globalSettings.qtyDiscountPercent})`);
-  }
-
-  if (activeAppliedDiscount) {
-    discountPercentage += activeAppliedDiscount.percent;
-    infoParts.push(`Kod: ${activeAppliedDiscount.code} (%${activeAppliedDiscount.percent})`);
-  }
-
-  const discountAmount = (subTotal * discountPercentage) / 100;
-  const finalTotal = Math.max(0, subTotal - discountAmount); // Prevent negative
-
-  return { subTotal, itemsCount, discountPercentage, discountAmount, finalTotal, infoText: infoParts.join(' + ') };
-}
-
-function refreshCheckoutTotal() {
-  const calc = calculateCartTotals();
-  const tEl = document.getElementById('chkBtnTotal');
-  if(tEl) tEl.textContent = calc.finalTotal.toLocaleString() + ' AZN';
+  const encoded = encodeURIComponent(message);
+  window.open(`https://wa.me/${num}?text=${encoded}`, '_blank');
   
-  const sumEl = document.getElementById('discountSummary');
-  if(sumEl) {
-    if(calc.discountAmount > 0) {
-      sumEl.style.display = 'block';
-      sumEl.innerHTML = `Uygulanan İndirimler: <br> <span style="color:#fff;">${calc.infoText}</span> <br> <strong>Toplam Kazanç: ${calc.discountAmount.toLocaleString()} AZN</strong>`;
-    } else {
-      sumEl.style.display = 'none';
-      document.getElementById('promoMessage').style.display = 'none';
-    }
-  }
-}
-
-function applyPromoCode() {
-  const input = document.getElementById('chkPromoCode');
-  const code = input.value.trim().toUpperCase();
-  const msgEl = document.getElementById('promoMessage');
-  
-  if(!code) return;
-  
-  const discountObj = allDiscounts.find(d => d.code === code);
-  if (!discountObj) {
-    msgEl.style.display = 'block';
-    msgEl.textContent = "Geçersiz veya süresi dolmuş kod.";
-    msgEl.style.color = "#ff4d4d";
-    activeAppliedDiscount = null;
-    return;
-  }
-  
-  activeAppliedDiscount = discountObj;
-  msgEl.style.display = 'block';
-  msgEl.textContent = `Tebrikler! ${code} kodu ile sepete %${discountObj.percent} ekstra indirim eklendi.`;
-  msgEl.style.color = "#4ade80";
-  
-  refreshCheckoutTotal();
+  // Səbəti təmizlə
+  cart = [];
+  saveCart();
   updateCartUI();
+  closeCart();
+  showToast('WhatsApp-a yönləndirilirsiniz...');
 }
 
-// CC & Checkout Logic
-document.getElementById('chkName')?.addEventListener('input', function(e) {
-  const v = e.target.value.toUpperCase();
-  const el = document.getElementById('ccVisName');
-  if(el) el.textContent = v || 'AD SOYAD';
-});
+function orderSingleViaWhatsApp() {
+  if (!currentProduct) return;
+  const sizeInput = document.querySelector('input[name="prodSize"]:checked');
+  const size = sizeInput ? sizeInput.value : 'M';
+  const num = globalSettings.whatsappNumber || '994553229166';
+  
+  let message = 'Salam! DroxStore saytından bu məhsulu almaq istəyirəm:\n\n';
+  message += `📦 Məhsul: ${currentProduct.name}\n`;
+  message += `📌 Kod: ${currentProduct.productCode || '---'}\n`;
+  message += `📏 Seçilən Bədən: ${size}\n`;
+  message += `💰 Qiymət: ${currentProduct.price} AZN`;
+  
+  if (customerData) {
+    message += `\n\n👤 Alıcı: ${customerData.name}`;
+  }
 
-function formatCardNum(el) {
-  let v = el.value.replace(/\D/g, '');
-  let formatted = v.match(/.{1,4}/g)?.join(' ') || '';
-  el.value = formatted;
-  const vis = document.getElementById('ccVisNum');
-  if(vis) vis.textContent = formatted || '#### #### #### ####';
-  const type = document.querySelector('.cc-type');
-  if(type) {
-    if(v.startsWith('4')) type.textContent = 'VISA';
-    else if(v.startsWith('5')) type.textContent = 'MASTER';
-    else type.textContent = 'CARD';
+  const encoded = encodeURIComponent(message);
+  window.open(`https://wa.me/${num}?text=${encoded}`, '_blank');
+  closeModal();
+  showToast('WhatsApp-a yönləndirilirsiniz...');
+}
+
+// ─── BİLDİRİŞLƏR SİSTEMİ (FRONTEND) ──────────────────────────────
+async function loadNotifications() {
+  try {
+    allNotifications = await API.get('/api/notifications');
+    updateNotifBadge();
+  } catch(e) { console.warn('Bildirişlər yüklənə bilmədi', e); }
+}
+
+function updateNotifBadge() {
+  const count = allNotifications.filter(n => {
+    const ts = n.createdAt?._seconds ? n.createdAt._seconds * 1000 : 0;
+    return ts > lastSeenNotifTime;
+  }).length;
+  const badge = document.getElementById('notifCount');
+  if (badge) {
+    if (count > 0) { badge.style.display = 'flex'; badge.textContent = count; }
+    else { badge.style.display = 'none'; }
   }
 }
-function formatCardExp(el) {
-  let v = el.value.replace(/\D/g, '');
-  if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2,4);
-  el.value = v;
-  const vis = document.getElementById('ccVisExp');
-  if(vis) vis.textContent = v || 'AA/YY';
-}
-function formatCardCvv(el) {
-  let v = el.value.replace(/\D/g, '');
-  el.value = v;
-  const vis = document.getElementById('ccVisCvv');
-  if(vis) vis.textContent = v || '***';
-}
-function flipCard(back) {
-  const box = document.getElementById('ccBox');
-  if(box) {
-    if(back) box.classList.add('flipped');
-    else box.classList.remove('flipped');
-  }
-}
 
-async function processCheckout() {
-  const nameStr = document.getElementById('chkName').value;
-  const phone   = document.getElementById('chkPhone').value;
-  const country = document.getElementById('chkCountry').value;
-  const city    = document.getElementById('chkCity').value;
-  const line1   = document.getElementById('chkLine1').value;
-  const line2   = document.getElementById('chkLine2').value;
-  const zip     = document.getElementById('chkZip').value;
-
-  if (!nameStr || !phone || !country || !city || !line1 || !zip) {
-    showToast('Lütfen teslimat alanlarını (Adres Satırı 2 hariç) eksiksiz doldurunuz.');
+function openNotifications() {
+  if (!customerToken && !customerData) {
+    openUserDrawer();
+    showToast('Xahiş edirik, bildirişləri görmək üçün daxil olun.');
     return;
   }
+  document.getElementById('notifDrawer')?.classList.add('open');
+  document.getElementById('notifOverlay')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  
+  lastSeenNotifTime = Date.now();
+  localStorage.setItem('drox_last_notif', lastSeenNotifTime.toString());
+  updateNotifBadge();
+  renderNotifications();
+}
 
-  const address = `${line1}\n${line2 ? line2 + '\n' : ''}${zip} ${city}\n${country}`;
-  const calc    = calculateCartTotals();
-  const total   = calc.finalTotal;
-  const email   = document.getElementById('chkEmail')?.value || (customerData?.email || '');
+function closeNotifications() {
+  document.getElementById('notifDrawer')?.classList.remove('open');
+  document.getElementById('notifOverlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
 
-  const btn = document.getElementById('chkSubmitBtn');
-  btn.disabled  = true;
-  btn.textContent = 'Payriff\'e Yönlendiriliyor...';
-
-  try {
-    // Backend'e pending sipariş oluştur + Payriff parametrelerini al
-    const result = await API.authAction('/api/payment/start', 'POST', {
-      customerName: nameStr,
-      phone,
-      address,
-      items: cart,
-      total,
-      appliedDiscountInfo: calc.infoText,
-      email
-    });
-
-    // Sepeti localStorage'a yedekle (success sayfasında temizlemek için)
-    localStorage.setItem('drox_pending_order', result.orderId);
-
-    // Payriff ödeme sayfasına yönlendir
-    if (result.success && result.paymentUrl) {
-      window.location.href = result.paymentUrl;
-    } else {
-      throw new Error(result.error || 'Ödeme başlatılamadı');
-    }
-
-  } catch (err) {
-    showToast('Ödeme başlatılamadı: ' + err.message);
-    btn.disabled = false;
-    btn.innerHTML = `<span>Payriff ile Öde</span> <span style="opacity:0.7;">·</span> <span id="chkBtnTotal">$${total.toLocaleString('en-US')}</span>`;
+function renderNotifications() {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  if (allNotifications.length === 0) {
+    list.innerHTML = '<p style="color:#888; text-align:center; padding:40px 0;">Hələ heç bir bildiriş yoxdur.</p>';
+    return;
   }
+  list.innerHTML = allNotifications.map(n => {
+    const icon = n.type === 'new_product' ? '🆕' : n.type === 'discount' ? '🏷️' : '📢';
+    return `
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:15px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong style="color:var(--accent);">${icon} ${n.title}</strong>
+        </div>
+        <p style="font-size:13px; color:#ccc; margin:0; line-height:1.5;">${n.message}</p>
+      </div>
+    `;
+  }).join('');
+}
+
+async function sendAdminNotification() {
+  const title = document.getElementById('notifTitle')?.value.trim();
+  const message = document.getElementById('notifMessage')?.value.trim();
+  const type = document.getElementById('notifType')?.value || 'announcement';
+  if (!title || !message) return showToast('Xahiş edirik, başlıq və mesaj daxil edin!');
+  try {
+    await API.authAction('/api/notifications', 'POST', { title, message, type });
+    showToast('Bildiriş göndərildi! ✅');
+    document.getElementById('notifTitle').value = '';
+    document.getElementById('notifMessage').value = '';
+    await loadNotifications();
+    loadAdminNotifications();
+  } catch(err) { showToast('Xəta: ' + err.message); }
+}
+
+async function loadAdminNotifications() {
+  const list = document.getElementById('adminNotifList');
+  if (!list) return;
+  if (allNotifications.length === 0) { list.innerHTML = '<p style="color:#888;">Bildiriş tapılmadı.</p>'; return; }
+  list.innerHTML = allNotifications.map(n => {
+    const icon = n.type === 'new_product' ? '🆕' : n.type === 'discount' ? '🏷️' : '📢';
+    return `
+      <div class="order-card">
+        <div class="order-header">
+          <span>${icon} ${n.title}</span>
+          <button class="admin-delete-btn" onclick="deleteNotification('${n.id}')">Sil</button>
+        </div>
+        <div class="order-items">${n.message}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function deleteNotification(id) {
+  if (!confirm('Bu bildirişi silmək istəyirsiniz?')) return;
+  try {
+    await API.authAction('/api/notifications/' + id, 'DELETE');
+    showToast('Bildiriş silindi');
+    await loadNotifications();
+    loadAdminNotifications();
+  } catch(err) { showToast(err.message); }
 }
 
 // ─── CUSTOMER AUTH & UI ──────────────────────────────────────────
@@ -954,14 +910,8 @@ function openUserDrawer() {
   document.getElementById('userDrawer')?.classList.add('open');
   document.getElementById('userOverlay')?.classList.add('open');
   document.body.style.overflow = 'hidden';
-  renderUserContent();
+  refreshUserUI();
 }
-function closeUserDrawer() {
-  document.getElementById('userDrawer')?.classList.remove('open');
-  document.getElementById('userOverlay')?.classList.remove('open');
-  document.body.style.overflow = '';
-}
-document.getElementById('userOverlay')?.addEventListener('click', closeUserDrawer);
 
 function switchUserTab(tab) {
   const l = document.getElementById('userLoginForm');
@@ -994,43 +944,12 @@ function refreshUserUI() {
     document.getElementById('userLoggedIn').style.display = 'block';
     document.getElementById('loggedUserName').textContent = customerData.name.split(' ')[0] || customerData.name;
     
-    // VIP Badge kontrolü
-    if (customerData.totalSpent >= globalSettings.vipThreshold) {
-      document.getElementById('vipBadge').style.display = 'block';
-    } else {
-      document.getElementById('vipBadge').style.display = 'none';
-    }
-    
-    // Avatar handler
     if (customerData.photoURL) {
       document.getElementById('userAvatarContainer').style.display = 'block';
       document.getElementById('userAvatar').src = customerData.photoURL;
     } else {
       document.getElementById('userAvatarContainer').style.display = 'none';
     }
-
-    // Address & Checkout Data Sync
-    const addr = customerData.address || {};
-    document.getElementById('savedCountry').value = addr.country || '';
-    document.getElementById('savedCity').value = addr.city || '';
-    document.getElementById('savedLine1').value = addr.line1 || '';
-    document.getElementById('savedLine2').value = addr.line2 || '';
-    document.getElementById('savedZip').value = addr.zip || '';
-    
-    const chkName = document.getElementById('chkName');
-    const chkEmail = document.getElementById('chkEmail');
-    
-    if(chkName) chkName.value = customerData.name || '';
-    if(chkEmail) chkEmail.value = customerData.email || '';
-    
-    if(document.getElementById('chkCountry')) {
-      document.getElementById('chkCountry').value = addr.country || '';
-      document.getElementById('chkCity').value = addr.city || '';
-      document.getElementById('chkLine1').value = addr.line1 || '';
-      document.getElementById('chkLine2').value = addr.line2 || '';
-      document.getElementById('chkZip').value = addr.zip || '';
-    }
-
   } else {
     document.getElementById('userLoggedOut').style.display = 'block';
     document.getElementById('userLoggedIn').style.display = 'none';
@@ -1038,13 +957,11 @@ function refreshUserUI() {
   }
 }
 
-// ─── AUTH SYNC TO BACKEND ───────────────────────────────────────
 async function syncFirebaseUserWithBackend(user, nameStr) {
   try {
-    const token = await user.getIdToken(true); // Force refresh token
+    const token = await user.getIdToken(true);
     customerToken = token;
     
-    // Backend ile eşitle (Firestore kaydı oluşturur, gerekirse foto yükler)
     const data = await API.authAction('/api/customers/sync', 'POST', {
       email: user.email,
       name: nameStr || user.displayName || 'İsimsiz Üye',
@@ -1056,83 +973,39 @@ async function syncFirebaseUserWithBackend(user, nameStr) {
       localStorage.setItem('drox_cust_token', customerToken);
       localStorage.setItem('drox_cust_data', JSON.stringify(customerData));
       refreshUserUI();
-    } else {
-      throw new Error("Sunucudan kullanıcı verisi alınamadı.");
     }
   } catch (err) {
     console.error('Sync Error:', err);
-    // Hata olsa bile token'ı saklayalım ki oturum açık kalsın
     localStorage.setItem('drox_cust_token', customerToken);
     refreshUserUI();
-    showToast('Sunucu ile eşitlenirken bir sorun oluştu, ancak giriş yapıldı.');
   }
 }
 
-// ─── GOOGLE LOGIN ───────────────────────────────────────────────
 async function handleGoogleLogin() {
   const btn = document.getElementById('btnGoogleLogin');
   if(!btn) return;
-  
   btn.disabled = true; 
   btn.style.opacity = '0.6';
-  btn.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;gap:10px;"><svg class="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="40 10"/><path d="M12 6v6l4 2"/></svg> Giriş yapılıyor...</span>';
   
   try {
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-      showToast('Firebase başlatılamadı. Lütfen sayfayı yenileyin.');
-      resetGoogleButton(btn);
-      return;
-    }
-    
     const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ 
-      prompt: 'select_account'
-    });
-    
-    // Mobil ve masaüstü uyumlu Popup ile Giriş
+    provider.setCustomParameters({ prompt: 'select_account' });
     const result = await firebase.auth().signInWithPopup(provider);
     if (result && result.user) {
       await syncFirebaseUserWithBackend(result.user, result.user.displayName);
-      showToast(`Hoş geldin, ${result.user.displayName}! 🎉`);
+      showToast(`Xoş gəldiniz, ${result.user.displayName}! 🎉`);
       refreshUserUI();
       closeUserDrawer();
     }
   } catch (err) {
     console.error('Google Auth Error:', err);
-    
-    // Eğer popup engellendiyse redirect fallback kullan
-    if (err.code === 'auth/popup-blocked') {
-      showToast('Popup engellendi, yönlendiriliyorsunuz...');
-      try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        await firebase.auth().signInWithRedirect(provider);
-        return; // Sayfa yönlenecek
-      } catch (redirErr) {
-        console.error('Redirect Auth Error:', redirErr);
-        showToast('Giriş başarısız oldu.');
-      }
-    } else {
-      let message = 'Google girişi başarısız.';
-      if (err.code === 'auth/unauthorized-domain') {
-        message = '⚠️ Domain yetkilendirilmemiş. Firebase Console\'da bu domaini eklemelisiniz.';
-      } else if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
-        message = 'Giriş işlemi iptal edildi.';
-      } else if (err.message) {
-        message = err.message;
-      }
-      showToast(message);
-    }
-    resetGoogleButton(btn);
+    showToast('Giriş uğursuz oldu.');
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
   }
 }
 
-function resetGoogleButton(btn) {
-  btn.disabled = false; 
-  btn.style.opacity = '1';
-  btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.73 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google ile Devam Et`;
-}
-
-// ─── EMAIL LOGIN & REGISTER ─────────────────────────────────────
 async function handleUserRegister(e) {
   e.preventDefault();
   const name = document.getElementById('rName').value;
@@ -1140,26 +1013,23 @@ async function handleUserRegister(e) {
   const password = document.getElementById('rPass').value;
   
   const btn = e.target.querySelector('button');
-  btn.disabled = true; btn.textContent = 'Kayıt Olunuyor...';
+  btn.disabled = true; btn.textContent = 'Qeydiyyat edilir...';
   try {
     const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await result.user.updateProfile({ displayName: name });
-    
     await result.user.sendEmailVerification();
     await firebase.auth().signOut();
     
-    // Formu temizle
     document.getElementById('rName').value = '';
     document.getElementById('rEmail').value = '';
     document.getElementById('rPass').value = '';
     
-    showToast('Qeydiyyat uğurludur! Zəhmət olmasa emailinizə gələn linklə hesabınızı təsdiqləyin.');
-    window.location.hash = '#home';
-    openUserDrawer(); // open login side
+    showToast('Qeydiyyat uğurludur! Zəhmət olmasa poçtunuza gələn təsdiqləmə linkinə klikləyin.');
+    switchUserTab('login');
   } catch(err) {
-    showToast('Kayıt başarısız: ' + err.message);
+    showToast('Qeydiyyat xətası: ' + err.message);
   } finally {
-    btn.disabled = false; btn.textContent = 'Hesap Oluştur';
+    btn.disabled = false; btn.textContent = 'Hesab Yarat';
   }
 }
 
@@ -1170,13 +1040,11 @@ function checkPwdStrength(val) {
   if(val.length > 5) score++;
   if(/[A-Z]/.test(val)) score++;
   if(/[0-9]/.test(val)) score++;
-  if(/[^A-Za-z0-9]/.test(val)) score++;
   
   if(score === 0) { bar.style.width = '0%'; }
-  else if(score === 1) { bar.style.width = '25%'; bar.style.backgroundColor = 'red'; }
-  else if(score === 2) { bar.style.width = '50%'; bar.style.backgroundColor = 'orange'; }
-  else if(score === 3) { bar.style.width = '75%'; bar.style.backgroundColor = 'yellow'; }
-  else if(score >= 4) { bar.style.width = '100%'; bar.style.backgroundColor = '#4ade80'; }
+  else if(score === 1) { bar.style.width = '33%'; bar.style.backgroundColor = 'red'; }
+  else if(score === 2) { bar.style.width = '66%'; bar.style.backgroundColor = 'orange'; }
+  else if(score >= 3) { bar.style.width = '100%'; bar.style.backgroundColor = '#25D366'; }
 }
 
 async function handleUserLogin(e) {
@@ -1185,18 +1053,19 @@ async function handleUserLogin(e) {
   const password = document.getElementById('lPass').value;
   
   const btn = e.target.querySelector('button');
-  btn.disabled = true; btn.textContent = 'Giriş Yapılıyor...';
+  btn.disabled = true; btn.textContent = 'Giriş edilir...';
   try {
     const result = await firebase.auth().signInWithEmailAndPassword(email, password);
     if (!result.user.emailVerified) {
       await firebase.auth().signOut();
-      showToast('Xəta: Zəhmət olmasa email ünvanınızı təsdiqləyin!');
+      showToast('Xəta: Zəhmət olmasa e-poçt ünvanınızı təsdiqləyin!');
       return;
     }
     await syncFirebaseUserWithBackend(result.user, result.user.displayName);
-    window.location.hash = '#home';
+    showToast('Uğurla giriş etdiniz! 🎉');
+    closeUserDrawer();
   } catch(err) {
-    showToast('Giriş reddedildi: ' + err.message);
+    showToast('Giriş xətası: ' + err.message);
   } finally {
     btn.disabled = false; btn.textContent = 'Giriş Yap';
   }
@@ -1206,16 +1075,16 @@ async function handleForgotPassword(e) {
   e.preventDefault();
   const email = document.getElementById('fEmail').value;
   const btn = e.target.querySelector('button');
-  btn.disabled = true; btn.textContent = 'Gönderiliyor...';
+  btn.disabled = true; btn.textContent = 'Göndərilir...';
   try {
     await firebase.auth().sendPasswordResetEmail(email);
-    showToast('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi! Lütfen gelen kutunuzu kontrol edin.', 'success');
+    showToast('Şifrə sıfırlama linki e-poçtunuza göndərildi! Poçtunuzu yoxlayın.');
     document.getElementById('fEmail').value = '';
     switchUserTab('login');
   } catch(err) {
-    showToast('Sıfırlama hatası: ' + err.message);
+    showToast('Xəta: ' + err.message);
   } finally {
-    btn.disabled = false; btn.textContent = 'Sıfırlama Linki Gönder';
+    btn.disabled = false; btn.textContent = 'Sıfırlama Linki Göndər';
   }
 }
 
@@ -1225,38 +1094,8 @@ function handleUserLogout() {
     localStorage.removeItem('drox_cust_token');
     localStorage.removeItem('drox_cust_data');
     refreshUserUI();
-    showToast('Çıkış yapıldı.');
+    showToast('Uğurla çıxış etdiniz.');
   });
-}
-
-// ─── ADDRESS UPDATE ─────────────────────────────────────────────
-async function saveUserAddress() {
-  const address = {
-    country: document.getElementById('savedCountry').value.trim(),
-    city: document.getElementById('savedCity').value.trim(),
-    line1: document.getElementById('savedLine1').value.trim(),
-    line2: document.getElementById('savedLine2').value.trim(),
-    zip: document.getElementById('savedZip').value.trim()
-  };
-
-  if(document.getElementById('chkCountry')) {
-    document.getElementById('chkCountry').value = address.country;
-    document.getElementById('chkCity').value = address.city;
-    document.getElementById('chkLine1').value = address.line1;
-    document.getElementById('chkLine2').value = address.line2;
-    document.getElementById('chkZip').value = address.zip;
-  }
-
-  if (customerToken && customerData) {
-    try {
-      await API.authAction('/api/customers/address', 'POST', { address });
-      customerData.address = address;
-      localStorage.setItem('drox_cust_data', JSON.stringify(customerData));
-      showToast('Detaylı adresiniz buluta kaydedildi! 📍');
-    } catch(err) {
-      showToast('Adres kaydedilemedi.');
-    }
-  }
 }
 
 // ─── ADMIN AUTH & PANEL ──────────────────────────────────────────
@@ -1270,12 +1109,12 @@ async function handleAdminLogin(e) {
     localStorage.setItem('drox_jwt_token', adminToken);
     
     document.getElementById('adminLoginOverlay').classList.remove('open');
-    showToast('Admin girişi başarılı! 🔓');
+    showToast('Admin girişi uğurludur! 🔓');
     await refreshAllData();
     openAdminPanel();
   } catch (err) {
     const errEl = document.getElementById('adminLoginError');
-    if(errEl) { errEl.textContent = 'Giriş reddedildi'; errEl.style.display = 'block'; }
+    if(errEl) { errEl.textContent = 'İstifadəçi adı və ya şifrə yanlışdır.'; errEl.style.display = 'block'; }
   }
 }
 
@@ -1291,7 +1130,7 @@ function closeAdminPanel() {
 }
 function adminLogout() {
   adminToken = null; localStorage.removeItem('drox_jwt_token');
-  closeAdminPanel(); showToast('Çıkış yapıldı');
+  closeAdminPanel(); showToast('Çıxış edildi');
 }
 function openAdminLogin() {
   if (adminToken) return openAdminPanel();
@@ -1301,30 +1140,26 @@ function closeAdminLogin() {
   document.getElementById('adminLoginOverlay')?.classList.remove('open');
 }
 
-// ─── ADMIN: DASHBOARD / ORDERS ───────────────────────────────────
+// ─── ADMIN: DASHBOARD ────────────────────────────────────────────
 async function refreshAdminPanel() {
   try {
     if(!adminToken) return;
     const stats = await API.authAction('/api/stats', 'GET');
     const statTotal = document.getElementById('statTotal');
     const statUsers = document.getElementById('statUsers');
-    const statSales = document.getElementById('statSales');
-    const statRevenue = document.getElementById('statRevenue');
     if(statTotal) statTotal.textContent = stats.totalProducts;
     if(statUsers) statUsers.textContent = stats.totalUsers || 0;
-    if(statSales) statSales.textContent = stats.totalSales || 0;
-    if(statRevenue) statRevenue.textContent = (stats.totalRevenue || 0).toLocaleString() + ' AZN';
     
     // Product List
     const pList = document.getElementById('adminProductList');
     pList.innerHTML = allProducts.map(p => {
-      const stockTxt = p.stock ? `S:${p.stock.S||0} M:${p.stock.M||0} L:${p.stock.L||0} XL:${p.stock.XL||0}` : 'Stok yok';
+      const stockTxt = p.stock ? `S:${p.stock.S||0} M:${p.stock.M||0} L:${p.stock.L||0} XL:${p.stock.XL||0}` : 'Stok yoxdur';
       return `
-      <div class="admin-product-item">
-        <div class="admin-product-thumb"><img src="${p.images?.[0] || ''}"></div>
-        <div class="admin-product-details">
-          <strong>${p.name} ${p.isFeatured ? '<span style="color:gold;">★</span>' : ''} ${p.isPrintful ? '<span style="color:#6366f1; font-size:10px;">PRINTFUL</span>' : ''}</strong>
-          <span style="font-size:11px;">${p.category} · ${p.price} AZN | Stok: ${stockTxt}</span>
+      <div class="admin-product-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div class="admin-product-thumb" style="width:40px; height:40px; border-radius:6px; overflow:hidden;"><img src="${p.images?.[0] || ''}" style="width:100%; height:100%; object-fit:cover;"></div>
+        <div class="admin-product-details" style="flex:1; margin-left:15px;">
+          <strong>[${p.productCode || 'DRX-X'}] ${p.name}</strong><br>
+          <span style="font-size:11px; color:#888;">${p.category} · ${p.price} AZN | Anbar: ${stockTxt}</span>
         </div>
         <div class="admin-product-actions" style="display:flex; gap:5px;">
           <button class="admin-delete-btn" style="border-color:#6366f1; color:#6366f1;" onclick="openEditProduct('${p.id}')">Düzenle</button>
@@ -1334,36 +1169,12 @@ async function refreshAdminPanel() {
       `;
     }).join('');
 
-    // Order List
-    const orders = await API.authAction('/api/orders', 'GET');
-    const oList = document.getElementById('adminOrderList');
-    if(oList) {
-      if(orders.length === 0) oList.innerHTML = "Henüz sipariş yok.";
-      else oList.innerHTML = orders.map(o => `
-        <div class="order-card">
-          <div class="order-header">
-            <span>Sipariş #${o.id.substring(0,6)}</span>
-            <span>${o.total} AZN</span>
-          </div>
-          <div><strong style="color:var(--accent);">Müşteri:</strong> ${o.customerName} - ${o.phone}</div>
-          <div style="margin-top:8px; margin-bottom:8px; padding: 10px; background: rgba(0,0,0,0.3); border-left: 2px solid var(--accent); border-radius:4px;">
-            <strong style="color:var(--accent); font-size:11px; display:block; margin-bottom:4px; letter-spacing:1px;">TESLİMAT ADRESİ</strong>
-            ${o.address.replace(/\n/g, '<br>')}
-          </div>
-          <div class="order-items">
-            ${o.items.map(i => `${i.qty}x ${i.name} (Beden: ${i.size})`).join('<br>')}
-          </div>
-          <button class="admin-delete-btn" style="margin-top:10px; width:100%; border-color:red;" onclick="deleteOrder('${o.id}')">Siparişi Arşivle / Sil</button>
-        </div>
-      `).join('');
-    }
-
     // Discounts List
     const dList = document.getElementById('adminDiscountList');
     if(dList) {
-      if(allDiscounts.length === 0) dList.innerHTML = "Aktif kupon yok.";
+      if(allDiscounts.length === 0) dList.innerHTML = "Aktiv endirim kodu yoxdur.";
       else dList.innerHTML = allDiscounts.map(d => {
-        const untilTxt = d.validUntil ? new Date(d.validUntil).toLocaleDateString('en-US') + ' Bitiş' : 'Süresiz';
+        const untilTxt = d.validUntil ? new Date(d.validUntil).toLocaleDateString('az-AZ') + ' Bitiş' : 'Sınırsız';
         return `
         <div class="cat-item">
           <span><strong>${d.code}</strong> - %${d.percent} (${untilTxt})</span>
@@ -1373,33 +1184,18 @@ async function refreshAdminPanel() {
     }
 
     // System Settings Populate
-    const st = globalSettings;
-    if(document.getElementById('set_vipThreshold')) {
-      document.getElementById('set_vipThreshold').value = st.vipThreshold || 500;
-      document.getElementById('set_qtyTarget').value = st.qtyDiscountTarget || 3;
-      document.getElementById('set_qtyPercent').value = st.qtyDiscountPercent || 10;
-      document.getElementById('set_datePercent').value = st.dateDiscountPercent || 8;
-      document.getElementById('set_printfulToken').value = st.printfulToken || '';
-      document.getElementById('set_usdRate').value = st.usdToTlRate || 1.0;
-      document.getElementById('set_printfulMargin').value = st.printfulMargin || 50;
+    if(document.getElementById('set_whatsappNumber')) {
+      document.getElementById('set_whatsappNumber').value = globalSettings.whatsappNumber || '994553229166';
+      document.getElementById('set_vipThreshold').value = globalSettings.vipThreshold || 500;
     }
 
   } catch (err) { console.error('Admin panel hatası:', err); }
 }
 
-async function deleteOrder(id) {
-  if (!confirm('Siparişi veritabanından silmek istiyor musunuz?')) return;
-  try {
-    await API.authAction(`/api/orders/${id}`, 'DELETE');
-    showToast('Sipariş silindi');
-    await refreshAdminPanel();
-  } catch (err) { showToast(err.message); }
-}
-
 // ─── ADMIN: ADD PRODUCT ──────────────────────────────────────────
 function handleMultiImageUpload(event) {
   const files = Array.from(event.target.files);
-  if (files.length > 5) return showToast('En fazla 5 görsel!');
+  if (files.length > 5) return showToast('Ən çox 5 şəkil seçə bilərsiniz!');
   selectedFiles = files;
   
   const area = document.getElementById('imagePreviewArea');
@@ -1416,15 +1212,15 @@ function handleMultiImageUpload(event) {
 }
 function removePreview(idx) {
   selectedFiles.splice(idx, 1);
-  handleMultiImageUpload({target: {files: selectedFiles}}); // re-render
+  handleMultiImageUpload({target: {files: selectedFiles}});
 }
 
 async function handleAddProduct(e) {
   e.preventDefault();
-  if (selectedFiles.length === 0) return showToast('En az 1 görsel seçin!');
+  if (selectedFiles.length === 0) return showToast('Ən azı 1 şəkil seçin!');
 
   const btn = e.target.querySelector('.admin-submit-btn');
-  btn.disabled = true; btn.textContent = 'Yükleniyor (Cloudinary)...';
+  btn.disabled = true; btn.textContent = 'Yüklənir (Cloudinary)...';
 
   try {
     const formData = new FormData();
@@ -1446,7 +1242,7 @@ async function handleAddProduct(e) {
     selectedFiles.forEach(file => formData.append('images', file));
 
     await API.authAction('/api/products', 'POST', formData, true);
-    showToast('Ürün başarıyla yayında! ✅');
+    showToast('Məhsul uğurla əlavə edildi! ✅');
     
     e.target.reset();
     selectedFiles = [];
@@ -1461,17 +1257,17 @@ async function handleAddProduct(e) {
 }
 
 async function deleteProduct(id) {
-  if (!confirm('Ürünü silmek istiyor musunuz?')) return;
+  if (!confirm('Bu məhsulu silmək istədiyinizdən əminsiniz?')) return;
   try {
     await API.authAction(`/api/products/${id}`, 'DELETE');
-    showToast('Ürün Firebase\'den silindi');
+    showToast('Məhsul silindi');
     await refreshAllData();
   } catch (err) { showToast(err.message); }
 }
 
 function openEditProduct(id) {
   const product = allProducts.find(p => p.id === id);
-  if (!product) return showToast('Ürün bulunamadı');
+  if (!product) return showToast('Məhsul tapılmadı');
   
   document.getElementById('editProdId').value = id;
   document.getElementById('editProdName').value = product.name || '';
@@ -1501,32 +1297,33 @@ async function saveEditProduct() {
     XL: Number(document.getElementById('editStockXL').value || 0)
   };
   
-  if (!name || !category || isNaN(price)) return showToast('Lütfen tüm alanları doldurun.');
+  if (!name || !category || isNaN(price)) return showToast('Bütün vacib xanaları doldurun.');
   
   try {
     await API.authAction(`/api/products/${id}`, 'PUT', { name, category, price, desc, stock });
-    showToast('Ürün başarıyla güncellendi! ✅');
+    showToast('Məhsul uğurla yeniləndi! ✅');
     closeEditProduct();
     await refreshAllData();
   } catch(err) {
-    showToast('Güncelleme hatası: ' + err.message);
+    showToast('Yeniləmə xətası: ' + err.message);
   }
 }
+
 async function addNewCategory() {
   const name = document.getElementById('newCatName').value.trim();
   if (!name) return;
   try {
     await API.authAction('/api/categories', 'POST', { name });
     document.getElementById('newCatName').value = '';
-    showToast('Kategori Firebase\'e eklendi');
+    showToast('Kateqoriya əlavə edildi');
     await refreshAllData();
   } catch (err) { showToast(err.message); }
 }
 async function deleteCategory(id) {
-  if (!confirm('Kategoriyi Firebase\'den silmek istiyor musunuz?')) return;
+  if (!confirm('Bu kateqoriyanı silmək istəyirsiniz?')) return;
   try {
     await API.authAction(`/api/categories/${id}`, 'DELETE');
-    showToast('Kategori silindi');
+    showToast('Kateqoriya silindi');
     await refreshAllData();
   } catch (err) { showToast(err.message); }
 }
@@ -1535,13 +1332,13 @@ async function addNewDiscount() {
   const code = document.getElementById('newDiscountCode').value.trim();
   const percent = document.getElementById('newDiscountPercent').value;
   const validDays = document.getElementById('newDiscountDays').value;
-  if(!code || !percent) return showToast('Kod ve yüzdeyi girin');
+  if(!code || !percent) return showToast('Kod və faizi daxil edin');
   try {
     await API.authAction('/api/discounts', 'POST', { code, percent, validDays });
     document.getElementById('newDiscountCode').value = '';
     document.getElementById('newDiscountPercent').value = '';
     document.getElementById('newDiscountDays').value = '';
-    showToast('İndirim kodu oluşturuldu!');
+    showToast('Endirim kodu uğurla əlavə edildi!');
     await refreshAllData();
   } catch(err) {
     showToast(err.message);
@@ -1549,53 +1346,28 @@ async function addNewDiscount() {
 }
 
 async function saveSystemSettings() {
+  const whatsappNumber = document.getElementById('set_whatsappNumber').value.trim();
   const vipThreshold = parseFloat(document.getElementById('set_vipThreshold').value);
-  const qtyDiscountTarget = parseInt(document.getElementById('set_qtyTarget').value);
-  const qtyDiscountPercent = parseFloat(document.getElementById('set_qtyPercent').value);
-  const dateDiscountPercent = parseFloat(document.getElementById('set_datePercent').value);
   
-  const printfulToken = document.getElementById('set_printfulToken').value.trim();
-  const usdToTlRate = parseFloat(document.getElementById('set_usdRate').value);
-  const printfulMargin = parseFloat(document.getElementById('set_printfulMargin').value);
-  
-  if (isNaN(vipThreshold) || isNaN(qtyDiscountTarget) || isNaN(qtyDiscountPercent) || isNaN(dateDiscountPercent) || isNaN(usdToTlRate) || isNaN(printfulMargin)) {
-    return showToast('Lütfen ayarları sayısal olarak doldurun.');
+  if (!whatsappNumber || isNaN(vipThreshold)) {
+    return showToast('Xahiş edirik, ayarları düzgün daxil edin.');
   }
   
   try {
-    const payload = { vipThreshold, qtyDiscountTarget, qtyDiscountPercent, dateDiscountPercent, printfulToken, usdToTlRate, printfulMargin };
-    const res = await API.authAction('/api/settings', 'POST', payload);
-    globalSettings = res.settings;
-    showToast('Özel ayarlar kaydedildi ve tüm ağa yansıtıldı! 🚀');
+    const payload = { whatsappNumber, vipThreshold };
+    await API.authAction('/api/settings', 'POST', payload);
+    showToast('Sistem ayarları uğurla yadda saxlanıldı! 🚀');
     await refreshAllData();
   } catch(err) {
-    showToast('Ayarlar kaydedilemedi: ' + err.message);
-  }
-}
-
-async function syncPrintfulProducts() {
-  await saveSystemSettings(); // Önce formu kaydet
-  
-  const btn = document.querySelector(`button[onclick="syncPrintfulProducts()"]`);
-  if(btn) { btn.disabled = true; btn.textContent = 'Senkronize Ediliyor... Lütfen Bekleyin ⏳'; }
-  
-  try {
-    const res = await API.authAction('/api/printful/sync', 'POST', {});
-    showToast(`Başarılı! ${res.count} ürün senkronize edildi.`);
-    await refreshAllData();
-    refreshAdminPanel();
-  } catch(err) {
-    showToast('Printful Hata: ' + err.message);
-  } finally {
-    if(btn) { btn.disabled = false; btn.textContent = '🔄 Printful Ayarlarını Kaydet ve Ürünleri Çek'; }
+    showToast('Ayarlar yadda saxlanılmadı: ' + err.message);
   }
 }
 
 async function deleteDiscount(id) {
-  if(!confirm('İndirim kodunu silmek istediğinize emin misiniz?')) return;
+  if(!confirm('Bu endirim kodunu silmək istəyirsiniz?')) return;
   try {
     await API.authAction(`/api/discounts/${id}`, 'DELETE');
-    showToast('İndirim kodu silindi.');
+    showToast('Endirim kodu silindi.');
     await refreshAllData();
   } catch(err) {
     showToast(err.message);
@@ -1610,30 +1382,15 @@ function closePromotions() {
   document.getElementById('promotionsOverlay')?.classList.remove('open');
   document.body.style.overflow = '';
 }
-function renderPublicDiscounts() {
-  const el = document.getElementById('publicDiscountsList');
-  if(!el) return;
-  if(allDiscounts.length === 0) {
-    el.innerHTML = '<span style="color:#aaa; font-size:13px;">Şu an aktif bir indirim kodu bulunmamaktadır. Etkinlikleri takip edin!</span>';
-    return;
-  }
-  el.innerHTML = allDiscounts.map(d => `
-    <div style="background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
-        <div><strong style="color:var(--accent); font-size: 16px;">${d.code}</strong> <br> <span style="font-size:12px; color:#888;">Sepette %${d.percent} Ekstra İndirim</span></div>
-        <button class="btn-ghost" style="padding: 4px 10px; font-size: 11px; border: 1px solid var(--accent);" onclick="copyToClipboard('${d.code}')">Kopyala</button>
-    </div>
-  `).join('');
-}
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text);
-  showToast(text + ' Kopyalandı!');
-}
 
 // ─── UTILS ───────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  if (t) {
+    t.textContent = msg; 
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
 }
 function openLookbook() { 
   document.getElementById('lookbookOverlay')?.classList.add('open'); 
@@ -1644,7 +1401,7 @@ function closeLookbook() {
   document.body.style.overflow=''; 
 }
 
-// --- AI SUPPORT SYSTEM & GEO LOCATION ---
+// --- AI SUPPORT SYSTEM ---
 function sendAiMessage() {
   const input = document.getElementById('aiChatInput');
   const text = input.value.trim();
@@ -1665,23 +1422,18 @@ function sendAiMessage() {
     
     const lower = text.toLowerCase();
     
-    // Akıllı Yanıt Mantığı
-    if (lower.includes('merhaba') || lower.includes('selam') || lower.includes('hey')) {
-      aiMsg.innerText = 'Merhaba! DroxStore Premium hizmetlerine hoş geldiniz. Size sipariş, kargo, iade veya ürün bedenleri hakkında nasıl yardımcı olabilirim?';
-    } else if (lower.includes('kargo') || lower.includes('teslimat') || lower.includes('ne zaman') || lower.includes('gelir')) {
-      aiMsg.innerText = 'Siparişleriniz genellikle onaylandıktan sonraki 1-3 iş günü içerisinde kargoya teslim edilmektedir. Takip numarası sistemdeki mail adresinize anında iletilir.';
-    } else if (lower.includes('iade') || lower.includes('değişim') || lower.includes('garanti') || lower.includes('iptal')) {
-      aiMsg.innerText = 'DroxStore üzerinden satın aldığınız tüm ürünlerde koşulsuz 30 gün iade ve değişim garantisi mevcuttur. Lütfen ürünü yıkamadan orijinal kutusunda saklayın.';
-    } else if (lower.includes('beden') || lower.includes('kalıp') || lower.includes('dar') || lower.includes('bol') || lower.includes('ölçü')) {
-      aiMsg.innerText = 'Kalıplarımız genel olarak \'Regular Fit\' şeklindedir. Eğer oversize (bol) durmasını istiyorsanız bir beden büyük almanızı tavsiye ederiz. Detaylı ölçü tablosu ürün fotoğraflarında yer almaktadır.';
-    } else if (lower.includes('iletişim') || lower.includes('telefon') || lower.includes('ulaşım') || lower.includes('müşteri hizmetleri')) {
-      aiMsg.innerText = 'Bize destek@droxstore.com adresinden ulaşabilir veya admin yetkilimizin direkt görebileceği şekilde alt kısımdan "Destek Talebi" oluşturabilirsiniz.';
-    } else if (lower.includes('teşekkür') || lower.includes('sağol') || lower.includes('tamam')) {
-      aiMsg.innerText = 'Rica ederim! Her zaman buradayım, iyi alışverişler dilerim.';
-    } else if (lower.includes('indirim') || lower.includes('kampanya') || lower.includes('promosyon')) {
-      aiMsg.innerText = 'Premium üyelerimize özel otomatik sepet indirimleri uygulanıyor. Ayrıca süreli kuponlar için "Kampanyalar" sayfasını kontrol edebilirsiniz.';
+    if (lower.includes('salam') || lower.includes('merhaba') || lower.includes('hey')) {
+      aiMsg.innerText = 'Salam! DroxStore premium dəstək asistanıdır. Ölçü, çatdırılma, qaytarma və ya digər mövzularda necə kömək edə bilərəm?';
+    } else if (lower.includes('kargo') || lower.includes('çatdırılma') || lower.includes('ne vaxt')) {
+      aiMsg.innerText = 'Çatdırılma 1-2 iş günü ərzində sürətli kuryer və ya poçt vasitəsilə həyata keçirilir.';
+    } else if (lower.includes('qaytar') || lower.includes('dəyiş') || lower.includes('iade')) {
+      aiMsg.innerText = 'DROX STORE-dan aldığınız bütün məhsulları 45 gün ərzində asanlıqla dəyişdirə bilərsiniz. Məhsulun yuyulmamış və etiketinin üzərində olması lazımdır.';
+    } else if (lower.includes('beden') || lower.includes('olcu') || lower.includes('dar') || lower.includes('bol')) {
+      aiMsg.innerText = 'Kalıplarımız standartdır (Regular Fit). Əgər oversize olmasını istəyirsinizsə, bir bədən böyük sifariş etməyi məsləhət görürük.';
+    } else if (lower.includes('təşəkkür') || lower.includes('sag ol') || lower.includes('çox sağol')) {
+      aiMsg.innerText = 'Xoşdur! Hər zaman kömək etməyə hazıram, xoş alış-verişlər!';
     } else {
-      aiMsg.innerText = 'Bu konuyu tam anlayamadım ama endişelenmeyin! Bu sorunu doğrudan site yöneticimizle çözmek isterseniz, aşağıdaki "Çözülemedi - Destek Talebi Oluştur" butonuna tıklayabilirsiniz. Ekibimiz anında panelinden görecektir.';
+      aiMsg.innerText = 'Bu suala tam cavab verə bilmədim. İstəsəniz, aşağıdakı "Canlı Dəstək / Menecerə Bağlan" düyməsinə klikləyərək adminlə əlaqə yarada bilərsiniz.';
     }
     
     chatBox.appendChild(aiMsg);
@@ -1691,21 +1443,21 @@ function sendAiMessage() {
 
 function escalateToAdmin() {
   const chatBox = document.getElementById('aiChatBox');
-  const userText = prompt('Destek talebinizi kısaca açıklayın:', 'Son siparişim hakkında sorun yaşıyorum');
+  const userText = prompt('Destək sorğunuzu qısaca daxil edin:', 'Sifariş haqqında sualım var');
   if(!userText) return;
   
   fetch('/api/support/ticket', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ issue: userText, user: typeof loggedInUser !== 'undefined' && loggedInUser ? loggedInUser.email : 'Bilinmeyen Kullanıcı' })
+    body: JSON.stringify({ issue: userText, user: customerData ? customerData.email : 'Qonaq İstifadəçi' })
   }).catch(e => console.log(e));
 
   const sysMsg = document.createElement('div');
   sysMsg.style.cssText = 'background: rgba(255,100,100,0.2); padding:8px; border-radius:8px; align-self:center; width:90%; text-align:center; font-size:11px; margin-top:5px;';
-  sysMsg.innerText = '✅ Destek talebiniz admin ekibine iletildi. En kısa sürede dönüş sağlanacaktır.';
+  sysMsg.innerText = '✅ Dəstək sorğunuz adminə göndərildi. Ən qısa zamanda əlaqə saxlanacaq.';
   chatBox.appendChild(sysMsg);
   chatBox.scrollTop = chatBox.scrollHeight;
-  if(typeof showToast === 'function') showToast('Destek talebi oluşturuldu.', 'success');
+  showToast('Sorğu yaradıldı.', 'success');
 }
 
 async function loadSupportTickets() {
@@ -1719,7 +1471,7 @@ async function loadSupportTickets() {
     
     list.innerHTML = '';
     if(tickets.length === 0) {
-      list.innerHTML = '<p style="color:#888; font-size:13px;">Şu an aktif destek talebi bulunmuyor.</p>';
+      list.innerHTML = '<p style="color:#888; font-size:13px;">Aktiv dəstək sorğusu yoxdur.</p>';
       return;
     }
     
@@ -1728,12 +1480,12 @@ async function loadSupportTickets() {
       el.className = 'order-card';
       el.innerHTML = `
         <div class="order-header">
-          <span>Kullanıcı: ${t.user}</span>
-          <button class="btn-ghost" style="font-size:10px; padding:2px 8px; border:1px solid var(--accent); color:var(--accent); border-radius:4px;" onclick="resolveTicket('${t.id}')">Çözüldü İşaretle</button>
+          <span>İstifadəçi: ${t.user}</span>
+          <button class="btn-ghost" style="font-size:10px; padding:2px 8px; border:1px solid var(--accent); color:var(--accent); border-radius:4px;" onclick="resolveTicket('${t.id}')">Həll Olundu İşarələ</button>
         </div>
         <div class="order-items">
           Sorun: ${t.issue}<br>
-          Tarih: ${new Date(t.date).toLocaleString('en-US')}
+          Tarih: ${new Date(t.date).toLocaleString('az-AZ')}
         </div>
       `;
       list.appendChild(el);
@@ -1746,7 +1498,7 @@ async function loadSupportTickets() {
 async function resolveTicket(id) {
   try {
     await fetch('/api/support/tickets/' + id, { method: 'DELETE' });
-    if(typeof showToast === 'function') showToast('Talep çözüldü olarak işaretlendi', 'success');
+    showToast('Sorğu həll edilmiş kimi qeyd olundu', 'success');
     loadSupportTickets();
   } catch(e) { console.log(e); }
 }
@@ -1762,56 +1514,6 @@ if(typeof _originalSwitchAdminTab !== 'function') {
     });
   });
 }
-
-// Map Location functions
-function findLocation() {
-  if (navigator.geolocation) {
-    if(typeof showToast === 'function') showToast('Konum bulunuyor...', '');
-    navigator.geolocation.getCurrentPosition(position => {
-      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + position.coords.latitude + '&lon=' + position.coords.longitude)
-        .then(res => res.json())
-        .then(data => {
-          if(data.address) {
-             document.getElementById('chkCountry').value = data.address.country || '';
-             document.getElementById('chkCity').value = data.address.city || data.address.town || data.address.state || '';
-             document.getElementById('chkZip').value = data.address.postcode || '';
-             document.getElementById('chkLine1').value = data.address.road || '';
-             if(typeof showToast === 'function') showToast('Konum başarıyla alındı!', 'success');
-          }
-        });
-    }, err => {
-       if(typeof showToast === 'function') showToast('Konum izni reddedildi.', 'error');
-    });
-  } else {
-    alert("Tarayıcınız konum özelliğini desteklemiyor.");
-  }
-}
-
-function findSavedLocation() {
-  if (navigator.geolocation) {
-    if(typeof showToast === 'function') showToast('Konum bulunuyor...', '');
-    navigator.geolocation.getCurrentPosition(position => {
-      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + position.coords.latitude + '&lon=' + position.coords.longitude)
-        .then(res => res.json())
-        .then(data => {
-          if(data.address) {
-             document.getElementById('savedCountry').value = data.address.country || '';
-             document.getElementById('savedCity').value = data.address.city || data.address.town || data.address.state || '';
-             document.getElementById('savedZip').value = data.address.postcode || '';
-             document.getElementById('savedLine1').value = data.address.road || '';
-             if(typeof showToast === 'function') showToast('Konum güncellendi, lütfen kaydedin.', 'success');
-          }
-        });
-    });
-  }
-}
-
-// --- GEO CURRENCY AUTO RATE ---
-let geoCurrencyTriggered = false;
-async function detectGeoCurrency() {
-  // Kaldırıldı. 
-}
-// document.addEventListener('DOMContentLoaded', () => { setTimeout(detectGeoCurrency, 1500); });
 
 // --- PROFILE DASHBOARD TABS ---
 document.addEventListener('click', e => {
@@ -1846,12 +1548,12 @@ function openSizeGuide() {
   const overlay = document.getElementById('modalOverlay');
   const modalContent = document.getElementById('modalContent');
   modalContent.innerHTML = `
-    <h2 style="font-family:var(--font-display); font-size:32px; color:var(--accent);">BEDEN ASİSTANI</h2>
-    <p style="color:#888; font-size:13px; margin-bottom:20px;">Lütfen boy ve kilonuzu girerek sistemin size en uygun bedeni önermesini sağlayın.</p>
+    <h2 style="font-family:var(--font-display); font-size:32px; color:var(--accent);">BƏDƏN ASİSTANI</h2>
+    <p style="color:#888; font-size:13px; margin-bottom:20px;">Lütfən boy və çəkinizi daxil edin ki, ən uyğun ölçünü təyin edək.</p>
     <div class="checkout-fields">
       <input type="number" id="sgHeight" placeholder="Boy (cm) Örn: 180" class="sg-input">
-      <input type="number" id="sgWeight" placeholder="Kilo (kg) Örn: 75" class="sg-input">
-      <button class="btn-primary" onclick="calculateSize()" style="margin-top:10px;">Bedenimi Bul</button>
+      <input type="number" id="sgWeight" placeholder="Çəki (kg) Örn: 75" class="sg-input">
+      <button class="btn-primary" onclick="calculateSize()" style="margin-top:10px;">Ölçünü tap</button>
     </div>
     <div id="sgResult" style="margin-top:20px; font-size:36px; color:var(--accent); font-family:var(--font-display);
          background:rgba(255,255,255,0.05); padding:20px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); display:none;">
@@ -1869,7 +1571,7 @@ function calculateSize() {
   if(!h || !w || h<100 || w<30) {
     resultDiv.style.display = 'block';
     resultDiv.style.fontSize = '14px';
-    resultDiv.innerHTML = 'Lütfen geçerli değerler girin (Örn: Boy 180, Kilo 75).';
+    resultDiv.innerHTML = 'Düzgün dəyərlər daxil edin.';
     return;
   }
   
@@ -1882,13 +1584,11 @@ function calculateSize() {
   
   resultDiv.style.display = 'block';
   resultDiv.style.fontSize = '32px';
-  resultDiv.innerHTML = 'Önerilen Beden: <span style="color:#4ade80;">' + size + '</span><div style="font-size:11px; color:#aaa; margin-top:10px;">(Regular Fit kalıp baz alınmıştır. Oversize duruş isterseniz bir beden büyük tercih edebilirsiniz.)</div>';
+  resultDiv.innerHTML = 'Məsləhət Görülən: <span style="color:#25D366;">' + size + '</span><div style="font-size:11px; color:#aaa; margin-top:10px;">(Regular Fit ölçüsü əsas götürülmüşdür. Oversize geyinmək istəyirsinizsə, bir bədən böyük seçə bilərsiniz.)</div>';
 }
-
 
 // ─── MOBİL DOKUNMA OPTİMİZASYONLARI ─────────────────────────────
 (function initMobileTouch() {
-  // Mobil cihazda cursor'ı gizle
   if ('ontouchstart' in window) {
     document.body.style.cursor = 'auto';
     const c = document.getElementById('cursor');
@@ -1897,18 +1597,15 @@ function calculateSize() {
     if (cf) cf.style.display = 'none';
   }
 
-  // Ürün kartlarına dokunulduğunda overlay göster (hover yok mobilde)
   document.addEventListener('touchstart', function(e) {
     const card = e.target.closest('.product-card');
     if (card) {
-      // Diğer kartların overlay'ini kapat
       document.querySelectorAll('.product-card.touch-active').forEach(c => {
         if (c !== card) c.classList.remove('touch-active');
       });
     }
   }, { passive: true });
 
-  // Modal'ı aşağı kaydırarak kapat (swipe down)
   let touchStartY = 0;
   document.addEventListener('touchstart', function(e) {
     touchStartY = e.touches[0].clientY;
@@ -1916,16 +1613,13 @@ function calculateSize() {
 
   document.addEventListener('touchend', function(e) {
     const modal = document.getElementById('modalOverlay');
-    const checkout = document.getElementById('checkoutOverlay');
     const swipeDown = e.changedTouches[0].clientY - touchStartY > 80;
 
     if (swipeDown) {
       if (modal && modal.classList.contains('open')) closeModal();
-      if (checkout && checkout.classList.contains('open')) closeCheckout();
     }
   }, { passive: true });
 
-  // Input zoom önleme — iOS 16px altı font zoom yapar
   document.querySelectorAll('input, textarea, select').forEach(el => {
     if (parseFloat(getComputedStyle(el).fontSize) < 16) {
       el.style.fontSize = '16px';

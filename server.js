@@ -1,5 +1,5 @@
 /* ============================================
-   DROXSTORE — Express Backend Server (v3 Cloud Pro)
+   DROXSTORE — Express Backend Server (v4.0 Azerbaijani WhatsApp & Notifications)
    ============================================ */
 
 require('dotenv').config();
@@ -36,8 +36,6 @@ const upload = multer({
 let db = null;
 try {
   let serviceAccount;
-  
-  // Firebase Service Account configuration
   const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
   
   if (fs.existsSync(serviceAccountPath)) {
@@ -81,7 +79,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-// Yerel uploads klasörü iptal! Artık Cloudinary üzerinden sunulacak.
 
 // Logger
 app.use((req, res, next) => {
@@ -96,35 +93,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_drox_key_2026_pro';
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1]; // "Bearer TOKEN" formatında gelir
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) return res.status(401).json({ error: 'Yetkilendirme gerekli (Token eksik)' });
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Geçersiz veya süresi dolmuş oturum' });
     req.user = user;
-    next(); // yetki tamam
+    next();
   });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: AUTH / SECURITY ═════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
-app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
-
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    // Şifre doğru ise JWT Token oluştur (24 saat geçerli)
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ success: true, token });
-  } else {
-    res.status(401).json({ error: 'Kullanıcı adı veya şifre yanlış' });
-  }
-});
-
-// Veritabanı (Firebase) Kapalıyken Çıkacak Hata Yakalayıcı
+// Veritabanı Kapalıyken Çıkacak Hata Yakalayıcı
 function checkDb(req, res, next) {
-  // DB yoksa hata verme, devam et (endpointler kendi içinde fallback yapacak)
   next();
 }
 
@@ -134,8 +115,6 @@ async function authenticateFirebaseToken(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
   
   if (!token) {
-    // Eğer token yoksa ama yerel moddaysak devam etmesine izin verebiliriz 
-    // veya sadece anonim kullanıcı gibi davranabiliriz.
     return res.status(401).json({ error: 'Yetkilendirme gerekli' });
   }
 
@@ -145,7 +124,6 @@ async function authenticateFirebaseToken(req, res, next) {
       req.user = decodedToken;
       next();
     } else {
-      // Firebase Admin yoksa yerel geliştirme için basit bir UID ata
       req.user = { uid: 'local_user_dev', email: 'local@droxstore.com', name: 'Yerel Kullanıcı' };
       next();
     }
@@ -155,9 +133,19 @@ async function authenticateFirebaseToken(req, res, next) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: CUSTOMERS (SYNCHRONIZE & PROFILE) ═══════════════════
-// ═══════════════════════════════════════════════════════════════
+// ─── API: AUTH / LOGIN ──────────────────────────────────────────
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: 'Kullanıcı adı veya şifre yanlış' });
+  }
+});
+
+// ─── API: CUSTOMERS (SYNCHRONIZE & PROFILE) ─────────────────────
 app.post('/api/customers/sync', [checkDb, authenticateFirebaseToken], async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -165,13 +153,11 @@ app.post('/api/customers/sync', [checkDb, authenticateFirebaseToken], async (req
     
     let finalPhotoURL = photoURL || null;
     let address = {};
-    let totalSpent = 0;
 
     if (db) {
       const docRef = db.collection('customers').doc(uid);
       const doc = await docRef.get();
       
-      // Eğer Fotoğraf URL'si Google/Açık Link ve Cloudinary'de değilse Cloudinary'ye at:
       if (photoURL && typeof photoURL === 'string' && !photoURL.includes('cloudinary.com')) {
         try {
           const uploadRes = await cloudinary.uploader.upload(photoURL, {
@@ -200,11 +186,6 @@ app.post('/api/customers/sync', [checkDb, authenticateFirebaseToken], async (req
           finalPhotoURL = existingData.photoURL || finalPhotoURL;
         }
       }
-
-      const ordersSnap = await db.collection('orders').where('email', '==', email || req.user.email).get();
-      ordersSnap.forEach(orderDoc => {
-        totalSpent += parseFloat(orderDoc.data().total || 0);
-      });
     }
 
     res.json({ 
@@ -214,8 +195,8 @@ app.post('/api/customers/sync', [checkDb, authenticateFirebaseToken], async (req
         email: email || req.user.email, 
         name: name || (req.user.name || 'İsimsiz Üye'), 
         photoURL: finalPhotoURL, 
-        address, 
-        totalSpent 
+        address,
+        totalSpent: 0
       } 
     });
   } catch(err) {
@@ -248,18 +229,41 @@ function saveLocalData(filePath, data) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: SETTINGS & DISCOUNTS ════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
+// ─── PRODUCT SKU GENERATOR ──────────────────────────────────────
+async function getNextProductCode() {
+  if (!db) {
+    const products = getLocalData(PRODUCTS_PATH);
+    const count = products.length + 1;
+    return `DRX-${String(count).padStart(3, '0')}`;
+  }
+  
+  const counterRef = db.collection('counters').doc('products');
+  try {
+    return await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(counterRef);
+      let nextCount = 1;
+      if (doc.exists) {
+        nextCount = (doc.data().count || 0) + 1;
+      }
+      transaction.set(counterRef, { count: nextCount }, { merge: true });
+      return `DRX-${String(nextCount).padStart(3, '0')}`;
+    });
+  } catch (e) {
+    console.error("Counter transaction error, fallback to random code", e);
+    return `DRX-${Math.floor(100 + Math.random() * 900)}`;
+  }
+}
+
+// ─── API: SETTINGS ──────────────────────────────────────────────
 app.get('/api/settings', async (req, res) => {
   try {
     if (db) {
       const doc = await db.collection('settings').doc('global').get();
       if (doc.exists) return res.json(doc.data());
     }
-    res.json(getLocalData(SETTINGS_PATH, { vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8, printfulToken: '', printfulMargin: 50 }));
+    res.json(getLocalData(SETTINGS_PATH, { vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8, whatsappNumber: '994553229166' }));
   } catch (err) {
-    res.json({ vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8 });
+    res.json({ vipThreshold: 500, qtyDiscountTarget: 3, qtyDiscountPercent: 10, dateDiscountPercent: 8, whatsappNumber: '994553229166' });
   }
 });
 
@@ -276,6 +280,7 @@ app.post('/api/settings', [checkDb, authenticateToken], async (req, res) => {
   }
 });
 
+// ─── API: DISCOUNTS ─────────────────────────────────────────────
 app.get('/api/discounts', async (req, res) => {
   try {
     if (db) {
@@ -288,9 +293,58 @@ app.get('/api/discounts', async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: CATEGORIES ══════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
+app.post('/api/discounts', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    const { code, percent, validDays } = req.body;
+    if (!code || !percent) return res.status(400).json({ error: 'Kod ve İndirim Yüzdesi gerekli' });
+
+    const codeUpper = code.toUpperCase().trim();
+    
+    if (db) {
+      const existing = await db.collection('discounts').where('code', '==', codeUpper).get();
+      if (!existing.empty) return res.status(400).json({ error: 'Bu indirim kodu zaten mevcut!' });
+    }
+
+    let validUntil = null;
+    if (validDays && parseInt(validDays) > 0) {
+        validUntil = new Date();
+        validUntil.setDate(validUntil.getDate() + parseInt(validDays));
+    }
+
+    const discData = {
+      code: codeUpper,
+      percent: parseFloat(percent),
+      validUntil: validUntil ? validUntil.toISOString() : null,
+      createdAt: new Date().toISOString()
+    };
+
+    if (db) {
+      const newDiscRef = db.collection('discounts').doc();
+      await newDiscRef.set({
+        ...discData,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      res.status(201).json({ id: newDiscRef.id, ...discData });
+    } else {
+      res.status(201).json({ id: 'local_' + Date.now(), ...discData });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/discounts/:id', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    if (db) {
+      await db.collection('discounts').doc(req.params.id).delete();
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── API: CATEGORIES ────────────────────────────────────────────
 app.get('/api/categories', async (req, res) => {
   try {
     if (db) {
@@ -304,6 +358,43 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
+app.post('/api/categories', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Kategori adı gerekli' });
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').trim();
+    
+    if (db) {
+      const ref = db.collection('categories').doc();
+      await ref.set({ name, slug });
+      res.status(201).json({ success: true, id: ref.id });
+    } else {
+      const cats = getLocalData(CATEGORIES_PATH);
+      cats.push({ id: 'local_' + Date.now(), name, slug });
+      saveLocalData(CATEGORIES_PATH, cats);
+      res.status(201).json({ success: true });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/categories/:id', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    if (db) {
+      await db.collection('categories').doc(req.params.id).delete();
+    } else {
+      let cats = getLocalData(CATEGORIES_PATH);
+      cats = cats.filter(c => c.id !== req.params.id);
+      saveLocalData(CATEGORIES_PATH, cats);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── API: PRODUCTS ──────────────────────────────────────────────
 app.get('/api/products', async (req, res) => {
   try {
     if (db) {
@@ -321,7 +412,6 @@ app.post('/api/products', [checkDb, authenticateToken, upload.array('images', 5)
   try {
     const { name, category, price, oldPrice, badge, badgeClass, desc, isFeatured } = req.body;
 
-    // Stok JSON olarak gelecek (Örn: {"S": 10, "M": 5})
     let stockData = {};
     if (req.body.stock) {
       try { stockData = JSON.parse(req.body.stock); } catch (e) { /* ignore */ }
@@ -330,27 +420,46 @@ app.post('/api/products', [checkDb, authenticateToken, upload.array('images', 5)
     if (!name || !category || !price) return res.status(400).json({ error: 'Zorunlu alanları doldurun' });
     if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'Görsel yüklenemedi' });
 
-    // Cloudinary'ye yüklenen dosyaların URL'lerini alıyoruz
     const imagePaths = req.files.map(f => f.path);
+    const productCode = await getNextProductCode();
 
     const productData = {
+      productCode,
       name: name.trim(),
       category,
       price: parseFloat(price),
       oldPrice: oldPrice ? parseFloat(oldPrice) : null,
       badge: badge || null,
       badgeClass: badgeClass || '',
-      stock: stockData, // Beden bazlı stoklar
+      stock: stockData,
       desc: (desc || '').trim(),
-      images: imagePaths, // Direkt cloudinary linkleri
-      isFeatured: isFeatured === 'true', // Anasayfada gösterilsin mi?
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      images: imagePaths,
+      isFeatured: isFeatured === 'true'
     };
 
-    const newProdRef = db.collection('products').doc();
-    await newProdRef.set(productData);
+    if (db) {
+      const newProdRef = db.collection('products').doc();
+      await newProdRef.set({
+        ...productData,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
 
-    res.status(201).json({ success: true, product: { id: newProdRef.id, ...productData } });
+      // Auto Send Notification
+      await db.collection('notifications').add({
+        title: '🆕 Yeni Məhsul!',
+        message: `"${name.trim()}" mağazaya əlavə edildi. Kod: ${productCode}. Qiymət: ${price} AZN`,
+        type: 'new_product',
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      res.status(201).json({ success: true, product: { id: newProdRef.id, ...productData } });
+    } else {
+      const prods = getLocalData(PRODUCTS_PATH);
+      const newProd = { id: 'local_' + Date.now(), ...productData, createdAt: new Date().toISOString() };
+      prods.push(newProd);
+      saveLocalData(PRODUCTS_PATH, prods);
+      res.status(201).json({ success: true, product: newProd });
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -359,339 +468,106 @@ app.post('/api/products', [checkDb, authenticateToken, upload.array('images', 5)
 
 app.delete('/api/products/:id', [checkDb, authenticateToken], async (req, res) => {
   try {
-    const docRef = db.collection('products').doc(req.params.id);
-    const doc = await docRef.get();
-    if (!doc.exists) return res.status(404).json({ error: 'Ürün bulunamadı' });
-
-    // Firebase'den sil
-    await docRef.delete();
-
-    // Opsiyonel: Cloudinary'den silme işlemi yapılabilir ama şu anlık atlıyoruz
+    if (db) {
+      await db.collection('products').doc(req.params.id).delete();
+    } else {
+      let prods = getLocalData(PRODUCTS_PATH);
+      prods = prods.filter(p => p.id !== req.params.id);
+      saveLocalData(PRODUCTS_PATH, prods);
+    }
     res.json({ success: true, message: 'Ürün silindi' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Ürün Düzenleme (Admin)
 app.put('/api/products/:id', [checkDb, authenticateToken], async (req, res) => {
   try {
-    const docRef = db.collection('products').doc(req.params.id);
-    const doc = await docRef.get();
-    if (!doc.exists) return res.status(404).json({ error: 'Ürün bulunamadı' });
-
-    const { name, category, price, desc, sizes, stock } = req.body;
+    const { name, category, price, desc, stock } = req.body;
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
     if (category !== undefined) updateData.category = category;
     if (price !== undefined) updateData.price = parseFloat(price);
     if (desc !== undefined) updateData.desc = desc.trim();
-    if (sizes !== undefined) updateData.sizes = sizes;
     if (stock !== undefined) updateData.stock = stock;
-    updateData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
 
-    await docRef.update(updateData);
+    if (db) {
+      updateData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+      await db.collection('products').doc(req.params.id).update(updateData);
+    } else {
+      const prods = getLocalData(PRODUCTS_PATH);
+      const idx = prods.findIndex(p => p.id === req.params.id);
+      if (idx !== -1) {
+        prods[idx] = { ...prods[idx], ...updateData, updatedAt: new Date().toISOString() };
+        saveLocalData(PRODUCTS_PATH, prods);
+      }
+    }
     res.json({ success: true, message: 'Ürün güncellendi' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: ORDERS (FIREBASE) ═══════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
-app.get('/api/orders', [checkDb, authenticateToken], async (req, res) => {
-  try {
-    const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
-    const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/orders', checkDb, async (req, res) => {
-  try {
-    const { customerName, phone, address, items, total, appliedDiscountInfo, email } = req.body;
-
-    if (!customerName || !phone || !address || !items || items.length === 0) {
-      return res.status(400).json({ error: 'Eksik veya hatalı sipariş bilgisi.' });
-    }
-
-    // Stok düşürme işlemi
-    const batch = db.batch();
-    for (const item of items) {
-      const prodRef = db.collection('products').doc(item.id);
-      const prodDoc = await prodRef.get();
-      if (prodDoc.exists) {
-        let currentStock = prodDoc.data().stock || {};
-        if (item.size && currentStock[item.size] !== undefined) {
-          currentStock[item.size] = Math.max(0, currentStock[item.size] - item.qty);
-          batch.update(prodRef, { stock: currentStock });
-        }
-      }
-    }
-
-    // Siparişi kaydet
-    const orderRef = db.collection('orders').doc();
-    const orderData = {
-      customerName,
-      email: email || null,
-      phone,
-      address,
-      items,
-      total,
-      appliedDiscountInfo: appliedDiscountInfo || '',
-      status: 'Yeni',
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-    batch.set(orderRef, orderData);
-
-    await batch.commit(); // Transaction mantığı
-
-    res.status(201).json({ success: true, orderId: orderRef.id });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/api/orders/:id', [checkDb, authenticateToken], async (req, res) => {
-  try {
-    await db.collection('orders').doc(req.params.id).delete();
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// İstatistikler (Admin Dashboard için)
+// ─── API: STATS (Admin Dashboard) ────────────────────────────────
 app.get('/api/stats', [checkDb, authenticateToken], async (req, res) => {
   try {
-    const productsSnap = await db.collection('products').get();
-    const ordersSnap = await db.collection('orders').get();
-    const usersSnap = await db.collection('customers').get();
-
-    let totalStock = 0;
-    productsSnap.docs.forEach(doc => {
-      const stock = doc.data().stock;
-      if (stock) { Object.values(stock).forEach(v => totalStock += Number(v)); }
-    });
-
-    let totalSales = 0;
-    let totalRevenue = 0;
-    ordersSnap.docs.forEach(doc => {
-      const order = doc.data();
-      totalRevenue += parseFloat(order.total || 0);
-      if (order.items && Array.isArray(order.items)) {
-        order.items.forEach(item => totalSales += parseInt(item.qty || 1));
-      }
-    });
-
-    res.json({
-      totalProducts: productsSnap.size,
-      totalOrders: ordersSnap.size,
-      totalStock,
-      totalUsers: usersSnap.size,
-      totalSales,
-      totalRevenue
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-app.post('/api/discounts', [checkDb, authenticateToken], async (req, res) => {
-  try {
-    const { code, percent, validDays } = req.body;
-    if (!code || !percent) return res.status(400).json({ error: 'Kod ve İndirim Yüzdesi gerekli' });
-
-    const codeUpper = code.toUpperCase().trim();
-    
-    // Check if code exists
-    const existing = await db.collection('discounts').where('code', '==', codeUpper).get();
-    if (!existing.empty) return res.status(400).json({ error: 'Bu indirim kodu zaten mevcut!' });
-
-    // Expiry calculation
-    let validUntil = null;
-    if (validDays && parseInt(validDays) > 0) {
-        validUntil = new Date();
-        validUntil.setDate(validUntil.getDate() + parseInt(validDays));
-    }
-
-    const newDiscRef = db.collection('discounts').doc();
-    const discData = {
-      code: codeUpper,
-      percent: parseFloat(percent),
-      validUntil: validUntil ? validUntil.toISOString() : null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-    await newDiscRef.set(discData);
-
-    res.status(201).json({ id: newDiscRef.id, ...discData });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/api/discounts/:id', [checkDb, authenticateToken], async (req, res) => {
-  try {
-    await db.collection('discounts').doc(req.params.id).delete();
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: PRINTFUL INTEGRATION ════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
-app.post('/api/printful/sync', [checkDb, authenticateToken], async (req, res) => {
-  try {
-    let st = {};
     if (db) {
-      const doc = await db.collection('settings').doc('global').get();
-      if (doc.exists) st = doc.data();
-    }
-    if (!st.printfulToken) {
-      st = getLocalData(SETTINGS_PATH, {});
-    }
-    
-    const pToken = st.printfulToken;
-    const margin = parseFloat(st.printfulMargin) || 50;
-    const usdToAzn = parseFloat(process.env.USD_TO_AZN_RATE || '1.70');
+      const productsSnap = await db.collection('products').get();
+      const usersSnap = await db.collection('customers').get();
 
-    if (!pToken) {
-      return res.status(400).json({ error: "Sistem Ayarlarından Printful Token eklemelisiniz." });
-    }
-
-    const headers = { 'Authorization': `Bearer ${pToken}` };
-    const prRes = await fetch('https://api.printful.com/store/products', { headers });
-    const prData = await prRes.json();
-    
-    if (prData.code !== 200) {
-      return res.status(400).json({ error: "Printful API Hatası: " + (prData.error || prData.message || JSON.stringify(prData)) });
-    }
-
-    const products = prData.result;
-    let syncedProducts = [];
-
-    for (const p of products) {
-      const detailRes = await fetch(`https://api.printful.com/store/products/${p.id}`, { headers });
-      const detailData = await detailRes.json();
-      const details = detailData.result;
-      
-      if (!details || !details.sync_variants) continue;
-      
-      let maxRetailPrice = 0;
-      let sizes = [];
-      let imagesList = [];
-      
-      details.sync_variants.forEach(v => {
-         const rp = parseFloat(v.retail_price) || 0;
-         if (rp > maxRetailPrice) maxRetailPrice = rp;
-         
-         if (v.files) {
-           v.files.forEach(f => {
-             if (f.type === 'preview' && f.preview_url && !imagesList.includes(f.preview_url)) {
-               imagesList.push(f.preview_url);
-             }
-           });
-         }
-         
-         const splitName = v.name.split('/');
-         if(splitName.length > 1) {
-            let sizePart = splitName[1].replace(')', '').trim();
-            if(!sizes.includes(sizePart)) sizes.push(sizePart);
-         }
+      let totalStock = 0;
+      productsSnap.docs.forEach(doc => {
+        const stock = doc.data().stock;
+        if (stock) { Object.values(stock).forEach(v => totalStock += Number(v)); }
       });
 
-      if (imagesList.length === 0 && details.sync_product.thumbnail_url) {
-        imagesList.push(details.sync_product.thumbnail_url);
-      }
-
-      if(sizes.length === 0) sizes = ["S", "M", "L", "XL"];
-      
-      // Satış Fiyatı Hesaplama: (Printful USD Fiyatı) * (Kar Marjı) * (USD->AZN Kuru)
-      // Örn: 10$ * 1.5 * 1.7 = 25.5 AZN
-      let finalPrice = (maxRetailPrice * (1 + (margin / 100)) * usdToAzn);
-      
-      // Kullanıcının "30 AZN altı" isteği için limit koyalım (Opsiyonel ama istenmişti)
-      if (finalPrice > 30) finalPrice = 29.90;
-      finalPrice = Math.ceil(finalPrice);
-
-      const stockData = {};
-      sizes.forEach(s => { stockData[s] = 999; });
-
-      const productData = {
-        id: `printful_${p.id}`,
-        name: details.sync_product.name,
-        desc: 'Printful Özel Tasarım Premium Baskılı Ürün.',
-        price: finalPrice,
-        category: 'Printful',
-        sizes: sizes,
-        stock: stockData,
-        images: imagesList,
-        isPrintful: true,
-        printfulId: p.id,
-        updatedAt: new Date().toISOString()
-      };
-
-      if (db) {
-        const existQuery = await db.collection('products').where('printfulId', '==', p.id).get();
-        if (existQuery.empty) {
-          productData.createdAt = admin.firestore.FieldValue.serverTimestamp();
-          await db.collection('products').add(productData);
-        } else {
-          const dId = existQuery.docs[0].id;
-          await db.collection('products').doc(dId).update(productData);
-        }
-      }
-      syncedProducts.push(productData);
+      res.json({
+        totalProducts: productsSnap.size,
+        totalStock,
+        totalUsers: usersSnap.size,
+        totalSales: 0,
+        totalRevenue: 0
+      });
+    } else {
+      const prods = getLocalData(PRODUCTS_PATH);
+      let totalStock = 0;
+      prods.forEach(p => {
+        if (p.stock) { Object.values(p.stock).forEach(v => totalStock += Number(v)); }
+      });
+      res.json({
+        totalProducts: prods.length,
+        totalStock,
+        totalUsers: 0,
+        totalSales: 0,
+        totalRevenue: 0
+      });
     }
-
-    // Her durumda yerel dosyaya da yazalım (Admin paneli için)
-    const localProds = getLocalData(PRODUCTS_PATH, []);
-    const merged = [...localProds];
-    
-    syncedProducts.forEach(sp => {
-      const idx = merged.findIndex(m => m.printfulId === sp.printfulId || m.id === sp.id);
-      if (idx !== -1) merged[idx] = { ...merged[idx], ...sp };
-      else merged.push(sp);
-    });
-    
-    saveLocalData(PRODUCTS_PATH, merged);
-
-    res.json({ success: true, count: syncedProducts.length });
   } catch (err) {
-    console.error('Printful sync error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: REVIEWS (FIREBASE) ══════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
+// ─── API: REVIEWS ───────────────────────────────────────────────
 app.get('/api/reviews/:productId', checkDb, async (req, res) => {
   try {
-    const snapshot = await db.collection('reviews')
-                             .where('productId', '==', req.params.productId)
-                             .get();
+    if (db) {
+      const snapshot = await db.collection('reviews')
+                               .where('productId', '==', req.params.productId)
+                               .get();
 
-    // Firebase'de composite index hatasından kaçınmak için mem. filter + sort yapıyoruz
-    const reviews = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return { 
-        id: doc.id, 
-        ...data, 
-        timeMs: data.createdAt ? data.createdAt.toMillis() : Date.now() 
-      };
-    }).sort((a,b) => b.timeMs - a.timeMs);
+      const reviews = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+          id: doc.id, 
+          ...data, 
+          timeMs: data.createdAt ? data.createdAt.toMillis() : Date.now() 
+        };
+      }).sort((a,b) => b.timeMs - a.timeMs);
 
-    res.json(reviews);
+      res.json(reviews);
+    } else {
+      res.json([]);
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -710,161 +586,73 @@ app.post('/api/reviews', [checkDb, authenticateFirebaseToken, upload.single('ima
       userPhoto: userPhoto || null,
       rating: Math.max(1, Math.min(5, parseInt(rating))),
       comment: (comment || '').trim(),
-      imageUrl: req.file ? req.file.path : null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      imageUrl: req.file ? req.file.path : null
     };
     
-    const docRef = await db.collection('reviews').add(reviewData);
-    res.status(201).json({ success: true, review: { id: docRef.id, ...reviewData } });
+    if (db) {
+      const docRef = await db.collection('reviews').add({
+        ...reviewData,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      res.status(201).json({ success: true, review: { id: docRef.id, ...reviewData } });
+    } else {
+      res.status(201).json({ success: true, review: reviewData });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ API: PAYRIFF PAYMENT ═════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
-const PAYRIFF_API_KEY = process.env.PAYRIFF_API_KEY || 'your_payriff_api_key';
-const PAYRIFF_SECRET_KEY = process.env.PAYRIFF_SECRET_KEY || 'your_payriff_secret_key';
-const PAYRIFF_MERCHANT_ID = process.env.PAYRIFF_MERCHANT_ID || 'your_merchant_id';
-const PAYRIFF_SUCCESS_URL = process.env.PAYRIFF_SUCCESS_URL || 'https://drox-store.vercel.app/payment-success.html';
-const PAYRIFF_ERROR_URL = process.env.PAYRIFF_ERROR_URL || 'https://drox-store.vercel.app/payment-error.html';
-
-// Payriff ödeme başlat — sipariş bilgilerini pending olarak kaydet, Payriff'e yönlendir
-app.post('/api/payment/start', checkDb, async (req, res) => {
+// ─── API: NOTIFICATIONS ──────────────────────────────────────────
+app.get('/api/notifications', async (req, res) => {
   try {
-    const { customerName, phone, address, items, total, appliedDiscountInfo, email } = req.body;
-
-    if (!customerName || !phone || !address || !items || items.length === 0) {
-      return res.status(400).json({ error: 'Eksik sipariş bilgisi.' });
+    if (db) {
+      const snapshot = await db.collection('notifications').orderBy('createdAt', 'desc').limit(50).get();
+      return res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }
+    res.json([]);
+  } catch (err) {
+    res.json([]);
+  }
+});
 
-    // Pending sipariş kaydet
-    const orderRef = db.collection('orders').doc();
-    const orderId  = orderRef.id;
-
-    await orderRef.set({
-      customerName,
-      email: email || null,
-      phone,
-      address,
-      items,
-      total,
-      appliedDiscountInfo: appliedDiscountInfo || '',
-      status: 'Ödeme Bekleniyor',
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    // Payriff payload — USD fiyatı AZN'ye çevir
-    const USD_TO_AZN = parseFloat(process.env.USD_TO_AZN_RATE || '1.70');
-    const amountAzn = (parseFloat(total) * USD_TO_AZN).toFixed(2);
-
-    const payload = {
-      body: {
-        amount: parseFloat(amountAzn),
-        currencyType: 'AZN',
-        description: `DroxStore Siparis #${orderId.substring(0,8)}`,
-        directPay: true,
-        installmentLevel: 0,
-        language: 'EN',
-        merchantId: PAYRIFF_MERCHANT_ID,
-        approveURL: PAYRIFF_SUCCESS_URL + '?order=' + orderId,
-        cancelURL: PAYRIFF_ERROR_URL + '?order=' + orderId,
-        declineURL: PAYRIFF_ERROR_URL + '?order=' + orderId
-      },
-      merchantId: PAYRIFF_MERCHANT_ID
+app.post('/api/notifications', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    const { title, message, type } = req.body;
+    if (!title || !message) return res.status(400).json({ error: 'Başlık ve mesaj gereklidir' });
+    
+    const notifData = {
+      title,
+      message,
+      type: type || 'announcement'
     };
 
-    const response = await fetch('https://api.payriff.com/api/v2/createOrder', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': PAYRIFF_API_KEY
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const resData = await response.json();
-
-    if (resData.code === '00' && resData.payload && resData.payload.paymentUrl) {
-      res.json({
-        success: true,
-        orderId,
-        paymentUrl: resData.payload.paymentUrl
+    if (db) {
+      const ref = await db.collection('notifications').add({
+        ...notifData,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
+      res.status(201).json({ success: true, id: ref.id, ...notifData });
     } else {
-      throw new Error(resData.message || 'Payriff order creation failed');
+      res.status(201).json({ success: true, id: 'local_' + Date.now(), ...notifData });
     }
-
-  } catch (err) {
-    console.error('Payriff start error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Payriff callback — ödeme sonucu (Not: Payriff genelde server-to-server callback yapar)
-app.post('/api/payment/callback', async (req, res) => {
-  try {
-    // Payriff callback yapısı (örnek: { payload: { orderId, orderStatus, sessionId } })
-    const { payload } = req.body;
-    if (!payload) return res.status(400).send('Bad Request');
-
-    const { orderId, orderStatus } = payload;
-    if (!db || !orderId) return res.status(400).send('Bad data');
-
-    const orderRef = db.collection('orders').doc(orderId);
-    const orderDoc = await orderRef.get();
-    if (!orderDoc.exists) return res.status(404).send('Order not found');
-
-    if (orderStatus === 'APPROVED') {
-      // Stok düş + siparişi onayla
-      const orderData = orderDoc.data();
-      const batch = db.batch();
-
-      for (const item of (orderData.items || [])) {
-        const prodRef = db.collection('products').doc(item.id);
-        const prodDoc = await prodRef.get();
-        if (prodDoc.exists) {
-          let currentStock = prodDoc.data().stock || {};
-          if (item.size && currentStock[item.size] !== undefined) {
-            currentStock[item.size] = Math.max(0, currentStock[item.size] - item.qty);
-            batch.update(prodRef, { stock: currentStock });
-          }
-        }
-      }
-
-      batch.update(orderRef, {
-        status: 'Ödendi',
-        paidAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      await batch.commit();
-      console.log(`✅ Payriff ödeme onaylandı: ${orderId}`);
-    } else {
-      await orderRef.update({ status: 'Ödeme Başarısız' });
-      console.log(`❌ Payriff ödeme başarısız: ${orderId} — ${orderStatus}`);
-    }
-
-    res.send('OK');
-  } catch (err) {
-    console.error('Payriff callback error:', err);
-    res.status(500).send('Error');
-  }
-});
-
-// Sipariş durumu sorgula (frontend polling için)
-app.get('/api/payment/status/:orderId', checkDb, async (req, res) => {
-  try {
-    const doc = await db.collection('orders').doc(req.params.orderId).get();
-    if (!doc.exists) return res.status(404).json({ error: 'Sipariş bulunamadı' });
-    const { status, transactionId } = doc.data();
-    res.json({ status, transactionId: transactionId || null });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// --- SUPPORT TICKETS API ---
+app.delete('/api/notifications/:id', [checkDb, authenticateToken], async (req, res) => {
+  try {
+    if (db) {
+      await db.collection('notifications').doc(req.params.id).delete();
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── API: SUPPORT TICKETS ───────────────────────────────────────
 let supportTickets = [];
 app.post('/api/support/ticket', (req, res) => {
   const ticket = { id: Date.now().toString(), issue: req.body.issue, user: req.body.user, date: new Date().toISOString() };
@@ -879,9 +667,8 @@ app.delete('/api/support/tickets/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// ─── Catch-all: SPA fallback (Express 5 compatible) ──────────────
+// ─── Catch-all: SPA fallback ─────────────────────────────────────
 app.use((req, res, next) => {
-  // Only serve index.html for non-API GET requests (SPA routing)
   if (req.method === 'GET' && !req.path.startsWith('/api/')) {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   } else {

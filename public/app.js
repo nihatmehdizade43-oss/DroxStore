@@ -999,10 +999,24 @@ async function handleGoogleLogin() {
     }
   } catch (err) {
     console.error('Google Auth Error:', err);
-    showToast('Giriş uğursuz oldu.');
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+      showToast('Yönləndirilirsiniz, zəhmət olmasa gözləyin...');
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithRedirect(provider);
+      } catch (redirErr) {
+        showToast('Yönləndirmə xətası: ' + redirErr.message);
+      }
+    } else if (err.code === 'auth/unauthorized-domain') {
+      showToast('Bu domen Firebase konsolunda təsdiqlənməyib. Qeydiyyatsız girişdən istifadə edə bilərsiniz.');
+    } else {
+      showToast('Giriş xətası: ' + err.message);
+    }
   } finally {
-    btn.disabled = false;
-    btn.style.opacity = '1';
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
   }
 }
 
@@ -1017,15 +1031,15 @@ async function handleUserRegister(e) {
   try {
     const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await result.user.updateProfile({ displayName: name });
-    await result.user.sendEmailVerification();
-    await firebase.auth().signOut();
+    
+    // Auto-login instantly after registration
+    await syncFirebaseUserWithBackend(result.user, name);
+    showToast('Qeydiyyat uğurludur və giriş edildi! 🎉');
+    closeUserDrawer();
     
     document.getElementById('rName').value = '';
     document.getElementById('rEmail').value = '';
     document.getElementById('rPass').value = '';
-    
-    showToast('Qeydiyyat uğurludur! Zəhmət olmasa poçtunuza gələn təsdiqləmə linkinə klikləyin.');
-    switchUserTab('login');
   } catch(err) {
     showToast('Qeydiyyat xətası: ' + err.message);
   } finally {
@@ -1056,11 +1070,6 @@ async function handleUserLogin(e) {
   btn.disabled = true; btn.textContent = 'Giriş edilir...';
   try {
     const result = await firebase.auth().signInWithEmailAndPassword(email, password);
-    if (!result.user.emailVerified) {
-      await firebase.auth().signOut();
-      showToast('Xəta: Zəhmət olmasa e-poçt ünvanınızı təsdiqləyin!');
-      return;
-    }
     await syncFirebaseUserWithBackend(result.user, result.user.displayName);
     showToast('Uğurla giriş etdiniz! 🎉');
     closeUserDrawer();
@@ -1096,6 +1105,27 @@ function handleUserLogout() {
     refreshUserUI();
     showToast('Uğurla çıxış etdiniz.');
   });
+}
+
+function quickLocalLogin() {
+  const name = prompt('Zəhmət olmasa adınızı daxil edin:');
+  if (!name || !name.trim()) return showToast('Ad boş ola bilməz.');
+  
+  customerData = {
+    uid: 'guest_' + Date.now(),
+    name: name.trim(),
+    email: 'guest_' + Date.now() + '@droxstore.com',
+    photoURL: null,
+    address: {}
+  };
+  customerToken = 'guest_token_' + Date.now();
+  
+  localStorage.setItem('drox_cust_token', customerToken);
+  localStorage.setItem('drox_cust_data', JSON.stringify(customerData));
+  
+  showToast(`Xoş gəldiniz, ${customerData.name}! 🎉`);
+  refreshUserUI();
+  closeUserDrawer();
 }
 
 // ─── ADMIN AUTH & PANEL ──────────────────────────────────────────

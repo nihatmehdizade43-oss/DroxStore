@@ -944,6 +944,15 @@ function refreshUserUI() {
     document.getElementById('userLoggedIn').style.display = 'block';
     document.getElementById('loggedUserName').textContent = customerData.name.split(' ')[0] || customerData.name;
     
+    const emailEl = document.getElementById('loggedUserEmail');
+    if (emailEl) {
+      if (customerData.email && customerData.email.includes('@droxstore.guest')) {
+        emailEl.textContent = 'E-poçt: (Doldurulmayıb)';
+      } else {
+        emailEl.textContent = customerData.email || 'Profilinizə xoş gəldiniz';
+      }
+    }
+    
     if (customerData.photoURL) {
       document.getElementById('userAvatarContainer').style.display = 'block';
       document.getElementById('userAvatar').src = customerData.photoURL;
@@ -1023,8 +1032,10 @@ async function handleGoogleLogin() {
 async function handleUserRegister(e) {
   e.preventDefault();
   const name = document.getElementById('rName').value;
-  const email = document.getElementById('rEmail').value;
-  const password = document.getElementById('rPass').value;
+  
+  // Create a fake guest email & password for Firebase Auth
+  const email = `guest_${Date.now()}@droxstore.guest`;
+  const password = `guest_${Date.now()}_pwd`;
   
   const btn = e.target.querySelector('button');
   btn.disabled = true; btn.textContent = 'Qeydiyyat edilir...';
@@ -1038,8 +1049,6 @@ async function handleUserRegister(e) {
     closeUserDrawer();
     
     document.getElementById('rName').value = '';
-    document.getElementById('rEmail').value = '';
-    document.getElementById('rPass').value = '';
   } catch(err) {
     let errMsg = err.message;
     if (err.code === 'auth/email-already-in-use') errMsg = 'Bu e-poçt ilə artıq hesab mövcuddur.';

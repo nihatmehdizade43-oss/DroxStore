@@ -1032,17 +1032,14 @@ async function handleUserRegister(e) {
     const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await result.user.updateProfile({ displayName: name });
     
-    // Email Verification Logic
-    await result.user.sendEmailVerification();
-    await firebase.auth().signOut(); // Prevent auto-login
-    
-    showToast('Qeydiyyat uğurludur! E-poçtunuza təsdiq mesajı göndərildi. Zəhmət olmasa, təsdiqlədikdən sonra giriş edin. ✉️');
+    // Auto-login instantly after registration
+    await syncFirebaseUserWithBackend(result.user, name);
+    showToast('Qeydiyyat uğurludur və giriş edildi! 🎉');
+    closeUserDrawer();
     
     document.getElementById('rName').value = '';
     document.getElementById('rEmail').value = '';
     document.getElementById('rPass').value = '';
-    
-    switchUserTab('login');
   } catch(err) {
     showToast('Qeydiyyat xətası: ' + err.message);
   } finally {
@@ -1073,14 +1070,6 @@ async function handleUserLogin(e) {
   btn.disabled = true; btn.textContent = 'Giriş edilir...';
   try {
     const result = await firebase.auth().signInWithEmailAndPassword(email, password);
-    
-    // Email Verification Check
-    if (!result.user.emailVerified) {
-      await firebase.auth().signOut();
-      showToast('Giriş xətası: Zəhmət olmasa e-poçt ünvanınızı təsdiqləyin!');
-      btn.disabled = false; btn.textContent = 'Giriş Yap';
-      return;
-    }
     
     await syncFirebaseUserWithBackend(result.user, result.user.displayName);
     showToast('Uğurla giriş etdiniz! 🎉');

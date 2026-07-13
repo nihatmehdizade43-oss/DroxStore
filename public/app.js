@@ -528,8 +528,8 @@ function openModal(id) {
         <p class="modal-desc">${p.desc || 'Bu məhsul üçün hələ təsvir daxil edilməyib.'}</p>
         <div class="size-selection" style="margin-top:15px; display:flex; gap:10px; font-weight:bold;">Bədən: ${sizesHTML}</div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-          <button class="modal-add-btn" onclick="addFromModal()" ${totalStock<=0?'disabled':''} style="flex:1;">Səbətə Əlavə Et</button>
-          <button class="modal-add-btn" onclick="orderSingleViaWhatsApp()" style="flex:1; background:#25D366; border-color:#25D366; color:white;">📱 WhatsApp ilə Al</button>
+          <button class="modal-add-btn" onclick="addFromModal()" ${totalStock<=0?'disabled':''} style="flex:1;">🛒 Səbətə At</button>
+          <button class="modal-add-btn" onclick="orderSingleViaWhatsApp()" style="flex:1; background:#25D366; border-color:#25D366; color:white; animation: pulse 2s infinite;">⚡ İndi WhatsApp-la Sifariş Et</button>
         </div>
         <button class="btn-ghost" style="width:100%; border:1px solid var(--border); padding:10px; border-radius:6px; color:var(--text-dim); margin-top:15px; cursor:pointer;" onclick="openSizeGuide()">📏 Bədən Ölçüsü Kılavuzu</button>
         <div id="productReviewsArea" class="reviews-section"></div>

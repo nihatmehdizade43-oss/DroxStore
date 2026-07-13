@@ -476,11 +476,7 @@ app.post('/api/products', [checkDb, authenticateToken, upload.array('images', 5)
 
       res.status(201).json({ success: true, product: { id: newProdRef.id, ...productData } });
     } else {
-      const prods = getLocalData(PRODUCTS_PATH);
-      const newProd = { id: 'local_' + Date.now(), ...productData, createdAt: new Date().toISOString() };
-      prods.push(newProd);
-      saveLocalData(PRODUCTS_PATH, prods);
-      res.status(201).json({ success: true, product: newProd });
+      res.status(500).json({ error: 'Verilənlər bazası bağlantısı yoxdur. Vercel-də FIREBASE_SERVICE_ACCOUNT_B64 yoxlayın.' });
     }
   } catch (err) {
     console.error(err);

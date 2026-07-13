@@ -1,0 +1,10 @@
+node_modules
+.env
+.env.render
+data/serviceAccountKey.json
+serviceAccountKey.json
+.git
+.gitignore
+FIREBASE_SETUP.md
+README.md
+.vscode

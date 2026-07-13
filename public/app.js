@@ -292,6 +292,10 @@ async function refreshAllData() {
     
     try {
       globalSettings = await API.get('/api/settings');
+      const floatBtn = document.getElementById('whatsappFloat');
+      if (floatBtn && globalSettings.whatsappNumber) {
+        floatBtn.href = `https://wa.me/${globalSettings.whatsappNumber}`;
+      }
     } catch(err) { console.warn("Ayarlar yüklənə bilmədi", err); }
 
     try {

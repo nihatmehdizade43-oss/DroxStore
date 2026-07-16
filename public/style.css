@@ -5,20 +5,20 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0A0A0A;
-  --bg2: #141414;
+  --bg: #000000;
+  --bg2: #111111;
   --bg3: #1a1a1a;
-  --surface: #141414;
-  --border: rgba(255, 215, 0, 0.15);
-  --accent: #FFD700;
-  --accent-rgb: 255, 215, 0;
-  --accent2: #E5C100;
-  --text: #FFFFFF;
+  --surface: #111111;
+  --border: rgba(201, 169, 110, 0.2);
+  --accent: #C9A96E;
+  --accent-rgb: 201, 169, 110;
+  --accent2: #b8975a;
+  --text: #F5F5F5;
   --text-dim: #CCCCCC;
   --text-muted: #888888;
-  --radius: 20px;
-  --radius-sm: 12px;
-  --font-display: 'Playfair Display', serif;
+  --radius: 4px;
+  --radius-sm: 2px;
+  --font-display: 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-ui: 'Inter', sans-serif;
   --trans: cubic-bezier(0.19, 1, 0.22, 1);

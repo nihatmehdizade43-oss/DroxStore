@@ -384,25 +384,36 @@ function renderTopDrops() {
 
 function createProductCard(p, i) {
   const mainImage = p.images && p.images.length > 0 ? p.images[0] : '';
+  const secondImage = p.images && p.images.length > 1 ? p.images[1] : mainImage;
   const badgeHtml = p.badge ? `<span class="prod-badge ${p.badgeClass || ''}">${p.badge}</span>` : '';
   
   return `
-    <div class="product-card" data-id="${p.id}" onclick="openModal('${p.id}')">
-      <div class="prod-img-wrap">
-        <div class="prod-img-bg">
-          <img src="${mainImage}" alt="${p.name}" class="prod-real-img" loading="lazy">
+    <div class="product-card" data-id="${p.id}" onclick="openModal('${p.id}')" style="border: none; border-radius: 4px; overflow: hidden; background: transparent;">
+      <style>
+        .product-card[data-id="${p.id}"] .hover-img { opacity: 0; transition: opacity 0.5s ease, transform 0.5s ease; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .product-card[data-id="${p.id}"]:hover .hover-img { opacity: 1; transform: scale(1.05); }
+        .product-card[data-id="${p.id}"] .main-img { transition: opacity 0.5s ease, transform 0.5s ease; width: 100%; height: 100%; object-fit: cover; }
+        .product-card[data-id="${p.id}"]:hover .main-img { opacity: 0; }
+        .product-card[data-id="${p.id}"] .prod-overlay { bottom: 0; left: 0; right: 0; padding: 0; }
+        .product-card[data-id="${p.id}"] .overlay-btn { width: 100%; border-radius: 0; padding: 18px 0; background: #fff; color: #000; font-weight: 600; letter-spacing: 2px; }
+        .product-card[data-id="${p.id}"]:hover .overlay-btn { background: var(--accent); }
+      </style>
+      <div class="prod-img-wrap" style="aspect-ratio: 3/4; border-radius: 4px; overflow: hidden;">
+        <div class="prod-img-bg" style="position: relative; width: 100%; height: 100%;">
+          <img src="${mainImage}" alt="${p.name}" class="main-img" loading="lazy">
+          <img src="${secondImage}" alt="${p.name}" class="hover-img" loading="lazy">
         </div>
         ${badgeHtml}
         <button class="wishlist-btn" onclick="event.stopPropagation(); toggleWishlist('${p.id}', this)" style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.5); border: none; color: white; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer; z-index: 5; transition: transform 0.2s, color 0.2s;">🤍</button>
         <div class="prod-overlay">
-          <button class="overlay-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">Səbətə Əlavə Et</button>
+          <button class="overlay-btn" onclick="event.stopPropagation(); openModal('${p.id}')">QUICK VIEW</button>
         </div>
       </div>
-      <div class="prod-info">
-        <div class="prod-name">${p.name}</div>
-        <div style="font-size:11px; color:var(--accent); opacity:0.7; margin-top:2px; font-family:var(--font-ui); font-weight:600;">${p.productCode || ''}</div>
-        <div class="prod-meta">
-          <div class="prod-price">${Number(p.price).toLocaleString()} AZN</div>
+      <div class="prod-info" style="text-align: center; padding: 25px 10px 10px; background: transparent;">
+        <div class="prod-name" style="font-family: var(--font-display); font-size: 16px; letter-spacing: 1px; font-weight: 500;">${p.name}</div>
+        <div style="font-size:11px; color:var(--text-dim); opacity:0.6; margin-top:6px; font-family:var(--font-ui); font-weight:400; letter-spacing: 2px;">${p.productCode || 'PREMIUM'}</div>
+        <div class="prod-meta" style="justify-content: center; margin-top: 12px;">
+          <div class="prod-price" style="font-size: 15px; font-weight: 600; color: var(--text);">${Number(p.price).toLocaleString()} AZN</div>
         </div>
       </div>
     </div>

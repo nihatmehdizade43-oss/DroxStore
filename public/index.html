@@ -124,115 +124,86 @@
 
 <!-- HOME VIEW -->
 <div id="home-view" class="app-view active-view">
-  <!-- HERO -->
-  <section class="hero">
+  <!-- HERO SECTION -->
+  <section class="hero premium-hero">
     <div class="hero-bg">
-      <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop" style="width:100%; height:100%; object-fit:cover; opacity:0.4; filter:grayscale(100%) contrast(1.2);" alt="Premium Geyim">
-      <div class="hero-grid"></div>
-      <div class="noise"></div>
+      <img src="https://images.unsplash.com/photo-1555529771-835f59bfc50c?q=80&w=2000&auto=format&fit=crop" style="width:100%; height:100%; object-fit:cover; opacity:0.6;" alt="Premium Geyim">
+      <div class="hero-overlay-dark" style="position:absolute; inset:0; background:linear-gradient(to top, var(--bg) 0%, transparent 50%, rgba(0,0,0,0.5) 100%);"></div>
     </div>
-    <div class="hero-content">
-      <div class="hero-manifesto" style="font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); margin-bottom: 32px; border-left: 2px solid var(--accent); padding-left: 20px; max-width: 500px; line-height: 1.6;">
-        EST. 2026 — PREMİUM DƏBİN YENİ ÜNVANI.
-      </div>
-      <h1 class="hero-title">
-        <span class="line">PREMIUM</span>
-        <span class="line typewriter" style="color:var(--accent);">APPAREL</span>
-        <span class="line">COLLECTION</span>
+    <div class="hero-content" style="text-align: center; max-width: 800px; margin: 0 auto;">
+      <h1 class="hero-title" style="font-family: var(--font-display); font-size: clamp(60px, 10vw, 120px); line-height: 1; margin-bottom: 20px; letter-spacing: -0.02em;">
+        <span class="line" style="display:block; color:var(--text); -webkit-text-stroke:0;">OWN YOUR</span>
+        <span class="line" style="display:block; color:var(--accent); -webkit-text-stroke:0;">STYLE</span>
       </h1>
-      <p class="hero-sub">DroxStore ilə sərhədləri aşın. Ən təmiz keyfiyyət, bənzərsiz dizaynlar və lüks moda anlayışı.</p>
-      <div class="hero-actions">
-        <a href="#products" class="btn-primary" onclick="setProductFilter('all', document.querySelector('.filter-btn'))">Kolleksiyanı Kəşf Et <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a>
-        <a href="#" class="btn-ghost" onclick="event.preventDefault(); openLookbook()">2026 Lookbook →</a>
-      </div>
-    </div>
-    <div class="hero-scroll"><span>AŞAĞI ENİN</span><div class="scroll-line"></div></div>
-  </section>
-
-  <!-- TRUST BAR -->
-  <section class="features" style="background: var(--bg); padding: 60px 48px;">
-    <div class="feat-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-      <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
-        <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-        </div>
-        <h4 style="font-size: 14px; margin-bottom: 4px;">Sürətli Çatdırılma</h4>
-        <p style="font-size: 12px; color: var(--text-dim);">Ölkə daxili sürətli kuryer və poçt.</p>
-      </div>
-      
-      <!-- WhatsApp Sifariş Trust Item -->
-      <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
-        <div class="feat-icon" style="background: rgba(37,211,102,0.1); width: 48px; height: 48px; margin-bottom: 16px;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        </div>
-        <h4 style="font-size: 14px; margin-bottom: 4px;">WhatsApp Sifariş</h4>
-        <p style="font-size: 12px; color: var(--text-dim);">Birbaşa WhatsApp ilə rahat və güvənli sifariş.</p>
-      </div>
-
-      <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
-        <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        </div>
-        <h4 style="font-size: 14px; margin-bottom: 4px;">7/24 Müştəri Dəstəyi</h4>
-        <p style="font-size: 12px; color: var(--text-dim);">Hər zaman suallarınızı cavablamağa hazırıq.</p>
-      </div>
-      <div class="feat-item" style="border: none; background: transparent; padding: 20px;">
-        <div class="feat-icon" style="background: rgba(var(--accent-rgb), 0.05); width: 48px; height: 48px; margin-bottom: 16px;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <h4 style="font-size: 14px; margin-bottom: 4px;">Premium Keyfiyyət</h4>
-        <p style="font-size: 12px; color: var(--text-dim);">Xüsusi seçilmiş premium geyim parçaları.</p>
+      <p class="hero-sub" style="margin: 0 auto 30px; text-transform:uppercase; letter-spacing:4px; font-weight:600; font-size:14px; color:var(--text);">2026 COLLECTION</p>
+      <p style="font-size: 16px; color: var(--text-dim); max-width: 500px; margin: 0 auto 50px; line-height: 1.6;">Minimal design. Premium quality. Created for people who stand out.</p>
+      <div class="hero-actions" style="justify-content: center; display:flex; gap:20px;">
+        <a href="#products" class="btn-primary" onclick="setProductFilter('all', document.querySelector('.filter-btn'))" style="padding:15px 40px; border-radius:0; font-weight:600;">SHOP NOW</a>
+        <a href="#catSection" class="btn-ghost" style="padding:15px 40px; border:1px solid var(--border); border-radius:0;">EXPLORE COLLECTION</a>
       </div>
     </div>
   </section>
 
-  <!-- MARQUEE -->
-  <div class="marquee-wrap">
-    <div class="marquee-track">
-      <span>7/24 KƏSİNTİSİZ MÜŞTƏRİ DƏSTƏYİ</span><span class="dot">✦</span>
-      <span>SÜRƏTLİ VƏ KUSURSUZ ÇATDIRILMA</span><span class="dot">✦</span>
-      <span>DROX PREMİUM KEYFİYYƏTİ</span><span class="dot">✦</span>
-      <span>%100 MƏMNUNİYYƏT GARANTİSİ</span><span class="dot">✦</span>
-      <span>7/24 AI & MÜŞTERİ XİDMƏTLƏRİ</span><span class="dot">✦</span>
+  <!-- BRAND STORY SECTION -->
+  <section class="brand-story" style="background: var(--bg); padding: 120px 48px; text-align: center;">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <h2 style="font-family: var(--font-display); font-size: clamp(32px, 5vw, 48px); margin-bottom: 30px; letter-spacing: 2px;">WE DON'T FOLLOW TRENDS. WE CREATE THEM.</h2>
+      <p style="font-size: 16px; color: var(--text-dim); line-height: 1.8;">DROX yalnız geyim istehsal etmir. Biz özünə güvənən, fərqlənmək istəyən insanlar üçün kimlik yaradırıq. Hər kolleksiya keyfiyyət, minimalizm və street culture ruhunu bir araya gətirir.</p>
     </div>
-  </div>
+  </section>
 
-  <!-- EXCLUSIVE CLUB SECTION -->
-  <section class="exclusive-club" style="padding: 80px 48px; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(15,15,15,1) 0%, rgba(25,20,35,1) 50%, rgba(15,15,15,1) 100%);">
-    <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
-      <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(232,255,71,0.03) 0%, transparent 50%); animation: floatBg 15s ease-in-out infinite;"></div>
-      <div style="position: absolute; top: 20%; right: 10%; width: 300px; height: 300px; border: 1px solid rgba(232,255,71,0.06); border-radius: 50%; animation: pulse 4s ease-in-out infinite;"></div>
+  <!-- STATS SECTION -->
+  <section class="stats-section" style="background: var(--bg2); padding: 80px 48px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; text-align: center;">
+      <div class="stat-item">
+        <div style="font-size: 40px; color: var(--accent); margin-bottom: 10px; font-weight: 700;">10,000+</div>
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);">Happy Customers</div>
+      </div>
+      <div class="stat-item">
+        <div style="font-size: 40px; color: var(--accent); margin-bottom: 10px; font-weight: 700;">50+</div>
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);">Premium Designs</div>
+      </div>
+      <div class="stat-item">
+        <div style="font-size: 40px; color: var(--accent); margin-bottom: 10px; font-weight: 700;">🚀</div>
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);">Fast Worldwide Shipping</div>
+      </div>
+      <div class="stat-item">
+        <div style="font-size: 40px; color: var(--accent); margin-bottom: 10px; font-weight: 700;">🛡️</div>
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);">Premium Quality Guarantee</div>
+      </div>
     </div>
-    
-    <div style="position: relative; z-index: 1; text-align: center; max-width: 700px; margin: 0 auto;">
-      <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232,255,71,0.08); border: 1px solid rgba(232,255,71,0.15); padding: 8px 20px; border-radius: 60px; margin-bottom: 30px;">
-        <span style="width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite;"></span>
-        <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 600;">Eksklüziv Üzvlər Klubu</span>
+  </section>
+
+  <!-- WHY DROX SECTION -->
+  <section class="why-drox" style="padding: 100px 48px; background: var(--bg);">
+    <div style="text-align: center; margin-bottom: 60px;">
+      <span style="color: var(--accent); letter-spacing: 3px; font-size: 12px; text-transform: uppercase;">Not for everyone</span>
+      <h2 style="font-size: 36px; margin-top: 10px;">Niyə DROX?</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; max-width: 1000px; margin: 0 auto;">
+      <div style="display: flex; align-items: center; gap: 15px; background: var(--bg2); padding: 25px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="color: var(--accent); font-size: 24px;">✔</div>
+        <div style="font-size: 16px; font-weight: 600;">Premium Material</div>
       </div>
-
-      <h2 style="font-family: var(--font-display); font-size: clamp(32px, 5vw, 56px); line-height: 1.1; margin-bottom: 16px; color: white;">
-        Premium Dünyaya<br><span style="color: var(--accent);">İlk Sən Daxil Ol</span>
-      </h2>
-      <p style="font-size: 15px; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;">
-        Yeni kolleksiyalar, xüsusi endirimlər və limitli buraxılışlardan ilk xəbərdar olmaq üçün qeydiyyatdan keç.
-      </p>
-
-      <!-- Email Form -->
-      <div class="club-email-wrap" style="margin-bottom: 50px; position: relative; max-width: 480px; margin: 0 auto;">
-        <input type="email" placeholder="E-poçt ünvanınızı daxil edin..." id="clubEmailInput" style="width:100%; padding:18px 24px; border:1px solid rgba(232,255,71,0.15); background:rgba(255,255,255,0.03); color:white; border-radius:60px; outline:none;">
-        <button onclick="if(document.getElementById('clubEmailInput').value) { showToast('Təbriklər! Artıq DroxStore ailəsindəsiniz 🎉'); document.getElementById('clubEmailInput').value=''; } else { showToast('Zəhmət olmasa e-poçt daxil edin'); }" style="position:absolute; right:5px; top:5px; bottom:5px; background:var(--accent); color:#000; border:none; border-radius:60px; padding:0 28px; font-weight:700; cursor:pointer;">ÜZV OL</button>
+      <div style="display: flex; align-items: center; gap: 15px; background: var(--bg2); padding: 25px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="color: var(--accent); font-size: 24px;">✔</div>
+        <div style="font-size: 16px; font-weight: 600;">Modern Streetwear Design</div>
       </div>
-
-      <!-- Stats -->
-      <div class="exclusive-stats-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 40px; margin-top: 40px; max-width: 400px; margin-left: auto; margin-right: auto;">
-        <div class="exclusive-stat">
-          <span class="stat-num" style="display: block; font-family: var(--font-display); font-size: 42px; color: var(--accent);">100%</span>
-          <span class="stat-label" style="font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">Məmnuniyyət</span>
-        </div>
-        <div class="exclusive-stat">
-          <span class="stat-num" style="display: block; font-family: var(--font-display); font-size: 42px; color: var(--accent);">24/7</span>
-          <span class="stat-label" style="font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">AI Dəstək</span>
-        </div>
+      <div style="display: flex; align-items: center; gap: 15px; background: var(--bg2); padding: 25px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="color: var(--accent); font-size: 24px;">✔</div>
+        <div style="font-size: 16px; font-weight: 600;">Comfortable Fit</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 15px; background: var(--bg2); padding: 25px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="color: var(--accent); font-size: 24px;">✔</div>
+        <div style="font-size: 16px; font-weight: 600;">Fast Delivery</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 15px; background: var(--bg2); padding: 25px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="color: var(--accent); font-size: 24px;">✔</div>
+        <div style="font-size: 16px; font-weight: 600;">Secure Payment</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 15px; background: var(--bg2); padding: 25px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="color: var(--accent); font-size: 24px;">✔</div>
+        <div style="font-size: 16px; font-weight: 600;">Limited Collections</div>
       </div>
     </div>
   </section>
@@ -294,28 +265,33 @@
 </section>
 
 <!-- FOOTER -->
-<footer class="footer">
-  <div class="footer-top">
-    <div class="footer-brand">
-      <a href="/" class="logo-foot">DROX<span>STORE</span></a>
-      <p>Modern lüksün və sokak modasının qüsursuz birləşməsi. 2026-cı ildən bəri sizinləyik.</p>
+<footer class="footer premium-footer">
+  <div class="footer-inner" style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 40px; padding: 60px 48px; border-top: 1px solid var(--border);">
+    <div class="footer-brand" style="max-width: 300px;">
+      <a href="/" class="logo-foot" style="font-size: 24px; font-weight: 700; color: #fff; text-decoration: none; letter-spacing: 2px;">DROX<span style="color: var(--accent);">STORE</span></a>
+      <p style="margin-top: 15px; color: var(--text-dim); font-size: 13px; line-height: 1.8;">Own Your Style.</p>
     </div>
-    <div class="footer-links">
-      <div class="footer-col">
-        <h5>MAĞAZA</h5>
-        <a href="#products">Məhsullar</a>
-        <a href="#about">Haqqımızda</a>
-        <a href="#contact">Əlaqə</a>
+    <div class="footer-links" style="display: flex; gap: 60px; flex-wrap: wrap;">
+      <div class="footer-col" style="display: flex; flex-direction: column; gap: 10px;">
+        <h5 style="color: #fff; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;">Menu</h5>
+        <a href="#products" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">Products</a>
+        <a href="#catSection" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">Collections</a>
+        <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">Shipping</a>
+        <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">Returns</a>
+        <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">FAQ</a>
+        <a href="#contact" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">Contact</a>
       </div>
-      <div class="footer-col">
-        <h5>ƏLAQƏ DETALLARI</h5>
-        <a href="mailto:nihatmehdizade43@gmail.com" style="color: var(--accent); font-weight: 700;">nihatmehdizade43@gmail.com</a>
-        <a href="tel:+994553229166" style="color: #ccc; font-size: 13px; font-weight: 500; text-decoration: none;">+994 55 322 91 66</a>
+      <div class="footer-col" style="display: flex; flex-direction: column; gap: 10px;">
+        <h5 style="color: #fff; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;">Social</h5>
+        <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">Instagram</a>
+        <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">TikTok</a>
+        <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">YouTube</a>
+        <a href="mailto:contact@droxstore.az" style="color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s;">Email</a>
       </div>
     </div>
   </div>
-  <div class="footer-bottom">
-    <span>© 2026 DroxStore Premium. Bütün hüquqlar qorunur.</span>
+  <div class="footer-bottom" style="text-align: center; padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); font-size: 12px;">
+    <span>© 2026 DROX STORE. All rights reserved.</span>
   </div>
 </footer>
 
